@@ -14,7 +14,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 |---|---|
 | **Phase** | 1 — Core |
 | **Last update** | 2026-11-24 |
-| **Next action** | Phase 1: T1.8 (benchmarks from the primary literature, cited) → T1.9 (fold plot) → T1.1 Makefile. |
+| **Next action** | Phase 1: T1.9 (matplotlib fold plot, tooling package) → T1.1 Makefile targets → Phase 1 exit check. |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
@@ -53,7 +53,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 | T1.5 | `evaluate(seq, moves, strategy, penalty, rng, dim)` → Evaluation (FR-5, §5.2) | `src/hpfold/fitness.py` | `tests/test_fitness.py`: penalty arithmetic; invalid flagged; repair strategy returns a valid fold | ☑ |
 | T1.6 | `random_valid_fold` (backtracking SAW) and `repair` (FR-6, FR-7) | `src/hpfold/folds.py` | always valid for 2D n ≤ 100 and 3D n ≤ 100; deterministic for a given seed; repair output valid and same length | ☑ |
 | T1.7 | Hypothesis properties: unit bonds; `encode(decode(m)) == m`; energy ≤ 0; energy == brute force; repair(m) valid | `tests/test_hp_properties.py` | (this is the test) + parse_sequence fuzzing | ☑ |
-| T1.8 | Benchmarks from the primary literature: 2D set (8–11 sequences, n ≈ 20–100) and 3D subset (3–5), each with a citation; source disagreements recorded (FR-B1 to B5) | `data/benchmarks.json`, `docs/benchmarks_sources.md` | `tests/test_benchmarks.py`: alphabet, stated length == len(seq), every entry has a source, energies ≤ 0 | ☐ |
+| T1.8 | Benchmarks from the primary literature: 2D set (8–11 sequences, n ≈ 20–100) and 3D subset (3–5), each with a citation; source disagreements recorded (FR-B1 to B5) | `data/benchmarks.json`, `docs/benchmarks_sources.md` | `tests/test_benchmarks.py`: alphabet, length, cited sources, independent notation expansion, contact bound, 21 golden pins | ☑ 21 instances (11 2D, 10 3D); reviewer re-verified against the source XML |
 | T1.9 | Matplotlib fold plot, 2D and 3D (tooling package) | `src/hpfold_tools/visualize.py` | `tests/test_visualize.py` smoke test (writes PNG to tmp_path) | ☐ |
 | T1.10 | Purity guard: the core package imports only stdlib + numpy | `tests/test_core_purity.py` | AST scan of `src/hpfold/**` imports | ☑ |
 
@@ -150,7 +150,7 @@ Every row is a required task.
 | E8 | ACO ant dead end | Bounded backtracking → restart; restarts logged | `tests/test_aco.py::test_dead_end_restart` | ☐ |
 | E9 | PSO one-hot collapse | Prevented by ε; diversity logged | `tests/test_pso.py::test_floor_prevents_collapse` | ☐ |
 | E10 | Fitness ties | Deterministic (stable sort) | `tests/test_algorithm_contract.py::test_determinism` | ☐ |
-| E11 | Disputed best-known / 3D lower bound | Both stored and cited; success uses the better value; flagged | `tests/test_benchmarks.py`; `tests/test_analysis.py::test_success_uses_best_value` | ☐ |
+| E11 | Disputed best-known / 3D lower bound | Both stored and cited; success uses the better value; flagged | `tests/test_benchmarks.py`; `tests/test_analysis.py::test_success_uses_best_value` | ◐ data side ☑ (no E* disputes found; sequence disputes recorded per instance); analysis side pending |
 | E12 | Target reached early | Stop; evals_to_best recorded; page shows "reached best-known" | `tests/test_algorithm_contract.py::test_target_early_stop`; Playwright | ☐ |
 | E13 | Cancel / tab closed mid-run | Workers terminated; partial best shown | `tests/test_algorithm_contract.py::test_cancel`; Playwright | ☐ |
 | E14 | Pyodide fails to load | Clear error; paper-results tab still works | `web/tests/e2e/pyodide_fail.spec.ts` | ☐ |
@@ -184,6 +184,7 @@ Design decisions, especially where the PRD left details open.
 | D7 | 2026-11-24 | `repair` = the same DFS as `random_valid_fold`, but trying the fold's own move first at each position | Keeps the valid prefix unchanged and alters the fold minimally; always returns a valid fold |
 | D8 | 2026-11-24 | Fold growth uses random restarts: per-attempt backtrack budget `BACKTRACKS_PER_BEAD = 50` × n, up to `MAX_ATTEMPTS = 100`; repair prefers the original moves for the first half of the attempts | Review H1: plain DFS hit a 200k-backtrack cap in ~0.07% of n=100 folds; with restarts, 0 failures in 3000 (n=100), 300 (n=200), 100 (n=400) runs; ~0.6 ms per n=100 fold |
 | D9 | 2026-11-24 | `evaluate(sequence, moves, dim, ...)`: `dim` is required; moves are checked against it in both strategies; the sequence must already be uppercase H/P (`parse_sequence` output); the penalty must be finite and ≥ 0 | Review M2/L2/L3: inferring dim from U/D letters would silently confine 3D repair to a plane |
+| D10 | 2026-11-24 | Benchmarks: Thachuk et al. 2007 Table 1 is the primary transcription source, cross-checked against Shmygelska & Hoos 2005; all `energy_kind = best_known` | Both papers agree on all 21 E*; the 2005 S1-6 and S2-1 notations fail their own length checks (51/47) |
 | D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
@@ -192,6 +193,7 @@ Open details to decide during implementation (to be logged here): penalty λ def
 ---
 
 ## Changelog
+- 2026-11-24 — T1.8 benchmarks: 21 instances generated by script, cited and cross-checked; harness run 22 RED re-demonstrated with user approval (sequencing slip); review APPROVE; golden pins added. 142 tests.
 - 2026-11-24 — Review round 1 (WARNING: H1, M1–M3, L1–L5) → fixes test-first (new tests observed RED → GREEN) → round 2 APPROVE. 114 tests, 99% coverage, Bandit clean. Mutants (D-frame, U-frame, R=L) now caught.
 - 2026-11-24 — Phase 1 unit 1: 5 test files written → observed RED (harness) → Gate 1 approved → hp_model/folds/fitness implemented → 76 tests pass, coverage 98% (core), Bandit clean → code review requested.
 - 2026-11-24 — `harness init` done by the user (`d6b01ee`). Config fixed (D5); uv env created; waiting on B2.

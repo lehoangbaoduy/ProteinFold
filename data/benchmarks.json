@@ -1,0 +1,309 @@
+{
+  "description": "Standard HP benchmark instances (2D square lattice: S1-*, 3D cubic lattice: S2-*). Sequences and E* transcribed from Thachuk et al. 2007, Table 1, and cross-checked against Shmygelska & Hoos 2005, Table 1. E* = best known energy as reported in both papers (neither labels them proven optima). See docs/benchmarks_sources.md.",
+  "sources": {
+    "thachuk2007": {
+      "citation": "Thachuk C, Shmygelska A, Hoos HH. A replica exchange Monte Carlo algorithm for protein folding in the HP model. BMC Bioinformatics. 2007;8:342. doi:10.1186/1471-2105-8-342",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2071922/"
+    },
+    "shmygelska2005": {
+      "citation": "Shmygelska A, Hoos HH. An ant colony optimisation algorithm for the 2D and 3D hydrophobic polar protein folding problem. BMC Bioinformatics. 2005;6:30. doi:10.1186/1471-2105-6-30",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC555464/"
+    }
+  },
+  "instances": [
+    {
+      "id": "S1-1",
+      "dim": 2,
+      "length": 20,
+      "sequence": "HPHPPHHPHPPHPHHPPHPH",
+      "notation": "(HP)2PH2PHP2HPH2P2HPH",
+      "best_known_energy": -9,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S1-2",
+      "dim": 2,
+      "length": 24,
+      "sequence": "HHPPHPPHPPHPPHPPHPPHPPHH",
+      "notation": "H2(P2H)7H",
+      "best_known_energy": -9,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S1-3",
+      "dim": 2,
+      "length": 25,
+      "sequence": "PPHPPHHPPPPHHPPPPHHPPPPHH",
+      "notation": "P2HP2(H2P4)3H2",
+      "best_known_energy": -8,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S1-4",
+      "dim": 2,
+      "length": 36,
+      "sequence": "PPPHHPPHHPPPPPHHHHHHHPPHHPPPPHHPPHPP",
+      "notation": "P3H2P2H2P5H7P2H2P4H2P2HP2",
+      "best_known_energy": -14,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S1-5",
+      "dim": 2,
+      "length": 48,
+      "sequence": "PPHPPHHPPHHPPPPPHHHHHHHHHHPPPPPPHHPPHHPPHPPHHHHH",
+      "notation": "P2H(P2H2)2P5H10P6(H2P2)2HP2H5",
+      "best_known_energy": -23,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S1-6",
+      "dim": 2,
+      "length": 50,
+      "sequence": "HHPHPHPHPHHHHPHPPPHPPPHPPPPHPPPHPPPHPHHHHPHPHPHPHH",
+      "notation": "H2(PH)3PH4PH(P3H)2P4H(P3H)2PH4(PH)4H",
+      "best_known_energy": -21,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Sources disagree: Shmygelska & Hoos 2005 (PMC HTML) prints H2(PH)3PH4PH(P3H)2P4H(P3H)2PHPH4(HP)3H2, which expands to 51 residues, inconsistent with its stated length 50. The Thachuk et al. 2007 notation (used here) expands to exactly 50. E* = -21 in both."
+    },
+    {
+      "id": "S1-7",
+      "dim": 2,
+      "length": 60,
+      "sequence": "PPHHHPHHHHHHHHPPPHHHHHHHHHHPHPPPHHHHHHHHHHHHPPPPHHHHHHPHHPHP",
+      "notation": "P2H3PH8P3H10PHP3H12P4H6PH2PHP",
+      "best_known_energy": -36,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S1-8",
+      "dim": 2,
+      "length": 64,
+      "sequence": "HHHHHHHHHHHHPHPHPPHHPPHHPPHPPHHPPHHPPHPPHHPPHHPPHPHPHHHHHHHHHHHH",
+      "notation": "H12(PH)2(P2H2)2P2HP2H2PPH2P2HP2(H2P2)2(HP)2H12",
+      "best_known_energy": -42,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S1-9",
+      "dim": 2,
+      "length": 85,
+      "sequence": "HHHHPPPPHHHHHHHHHHHHPPPPPPHHHHHHHHHHHHPPPHHHHHHHHHHHHPPPHHHHHHHHHHHHPPPHPPHHPPHHPPHPH",
+      "notation": "H4P4H12P6(H12P3)3HP2(H2P2)2HPH",
+      "best_known_energy": -53,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Originally from Konig & Dandekar 1999 (cited as [45] in Shmygelska & Hoos 2005)."
+    },
+    {
+      "id": "S1-10",
+      "dim": 2,
+      "length": 100,
+      "sequence": "PPPHHPPHHHHPPHHHPHHPHHPHHHHPPPPPPPPHHHHHHPPHHHHHHPPPPPPPPPHPHHPHHHHHHHHHHHPPHHHPHHPHPPHPHHHPPPPPPHHH",
+      "notation": "P3H2P2H4P2H3(PH2)2PH4P8H6P2H6P9HPH2PH11P2H3PH2PHP2HPH3P6H3",
+      "best_known_energy": -50,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S1-11",
+      "dim": 2,
+      "length": 100,
+      "sequence": "PPPPPPHPHHPPPPPHHHPHHHHHPHHPPPPHHPPHHPHHHHHPHHHHHHHHHHPHHPHHHHHHHPPPPPPPPPPPHHHHHHHPPHPHHHPPPPPPHPHH",
+      "notation": "P6HPH2P5H3PH5PH2P4H2P2H2PH5PH10PH2PH7P11H7P2HPH3P6HPH2",
+      "best_known_energy": -48,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Shmygelska & Hoos 2005 (PMC HTML) shows a lowercase 'p11', read as P11; it then matches Thachuk et al. 2007 exactly."
+    },
+    {
+      "id": "S2-1",
+      "dim": 3,
+      "length": 48,
+      "sequence": "HPHHPPHHHHPHHHPPHHPPHPHHHPHPHHPPHHPPPHPPPPPPPPHH",
+      "notation": "HPH2P2H4PH3P2H2P2HPH3PHPH2P2H2P3HP8H2",
+      "best_known_energy": -32,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Sources disagree: Shmygelska & Hoos 2005 (PMC HTML) has ...P2HPH2PHPH2... (47 residues, inconsistent with its stated length 48); Thachuk et al. 2007 has ...P2HPH3PHPH2... (48 residues, used here). E* = -32 in both."
+    },
+    {
+      "id": "S2-2",
+      "dim": 3,
+      "length": 48,
+      "sequence": "HHHHPHHPHHHHHPPHPPHHPPHPPPPPPHPPHPPPHPPHHPPHHHPH",
+      "notation": "H4PH2PH5P2HP2H2P2HP6HP2HP3HP2H2P2H3PH",
+      "best_known_energy": -34,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S2-3",
+      "dim": 3,
+      "length": 48,
+      "sequence": "PHPHHPHHHHHHPPHPHPPHPHHPHPHPPPHPPHHPPHHPPHPHPPHP",
+      "notation": "PHPH2PH6P2HPHP2HPH2(PH)2P3H(P2H2)2P2HPHP2HP",
+      "best_known_energy": -34,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Shmygelska & Hoos 2005 (PMC HTML/XML) prints this row with a misplaced subscript (H with subscript P, i.e. a mispositioned 'HP'); read that way it equals the Thachuk et al. 2007 notation used here, which is length-consistent (48)."
+    },
+    {
+      "id": "S2-4",
+      "dim": 3,
+      "length": 48,
+      "sequence": "PHPHHPPHPHHHPPHHPHHPPPHHHHHPPHPHHPHPHPPPPHPPHPHP",
+      "notation": "PHPH2P2HPH3P2H2PH2P3H5P2HPH2(PH)2P4HP2(HP)2",
+      "best_known_energy": -33,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S2-5",
+      "dim": 3,
+      "length": 48,
+      "sequence": "PPHPPPHPHHHHPPHHHHPHHPHHHPPHPHPHPPHPPPPPPHHPHHPH",
+      "notation": "P2HP3HPH4P2H4PH2PH3P2(HP)2HP2HP6H2PH2PH",
+      "best_known_energy": -32,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S2-6",
+      "dim": 3,
+      "length": 48,
+      "sequence": "HHHPPPHHPHPHHPHHPHHPHPPPPPPPHPHPPHPPPHPPHHHHHHPH",
+      "notation": "H3P3H2PH(PH2)3PHP7HPHP2HP3HP2H6PH",
+      "best_known_energy": -32,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S2-7",
+      "dim": 3,
+      "length": 48,
+      "sequence": "PHPPPPHPHHHPHPHHHHPHHPHHPPPHPHPPPHHHPPHHPPHHPPPH",
+      "notation": "PHP4HPH3PHPH4PH2PH2P3HPHP3H3(P2H2)2P3H",
+      "best_known_energy": -32,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S2-8",
+      "dim": 3,
+      "length": 48,
+      "sequence": "PHHPHHHPHHHHPPHHHPPPPPPHPHHPPHHPHPPPHHPHPHPHHPPP",
+      "notation": "PH2PH3PH4P2H3P6HPH2P2H2PHP3H2(PH)2PH2P3",
+      "best_known_energy": -31,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S2-9",
+      "dim": 3,
+      "length": 48,
+      "sequence": "PHPHPPPPHPHPHPPHPHHHHHHPPHHHPHPPHPHHPPHPHHHPPPPH",
+      "notation": "(PH)2P4(HP)2HP2HPH6P2H3PHP2HPH2P2HPH3P4H",
+      "best_known_energy": -34,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    },
+    {
+      "id": "S2-10",
+      "dim": 3,
+      "length": 48,
+      "sequence": "PHHPPPPPPHHPPPHHHPHPPHPHHPPHPPHPPHHPPHHHHHHHPPHH",
+      "notation": "PH2P6H2P3H3PHP2HPH2(P2H)2P2H2P2H7P2H2",
+      "best_known_energy": -33,
+      "energy_kind": "best_known",
+      "sources": [
+        "thachuk2007",
+        "shmygelska2005"
+      ],
+      "notes": "Identical sequence and E* in both sources."
+    }
+  ]
+}
