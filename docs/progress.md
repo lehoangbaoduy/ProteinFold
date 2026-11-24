@@ -14,20 +14,21 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 |---|---|
 | **Phase** | 1 — Core |
 | **Last update** | 2026-11-24 |
-| **Next action** | ⊘ User: `chmod +x .claude/hooks/*.sh`, then `harness reconcile-config`, then restart the Claude Code session so the hooks load (B2). After that: Phase 1, T1.2–T1.7 tests first (RED). |
+| **Next action** | Phase 1: T1.8 (benchmarks from the primary literature, cited) → T1.9 (fold plot) → T1.1 Makefile. |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
 |---|---|---|---|
 | B1 | ~~Harness-os not initialized~~. Resolved: the user ran `harness init` (commit `d6b01ee`). | User | resolved 2026-11-24 |
-| B2 | The generated hook scripts are mode 644 (not executable), so the gate would fail open. The test command `pytest` used the user-level Python without project dependencies, so Claude changed it to `uv run pytest` and added web globs; this needs `reconcile-config`. Hooks load only at session start, so the session must be restarted. | User | 2026-11-24 |
+| B2 | The generated hook scripts are mode 644 (not executable), so the gate would fail open. The test command `pytest` used the user-level Python without project dependencies, so Claude changed it to `uv run pytest` and added web globs; this needs `reconcile-config`. | User | resolved 2026-11-24: reconciled (`b3fcef3`); hooks made executable (`f9c7641`); hooks turned out to be live without a restart |
+| B3 | ~~The gate daemon's `/workspaces` bind mount was stale (empty), so every gate check failed closed~~ | User (container restart) | resolved 2026-11-24 |
 
 ### Harness-os state
 | Item | Value |
 |---|---|
 | Product spec | `PFOLD-PROD-001` v1 (active) |
 | Phase 1 domain spec | `PFOLD-DOM-001` v1 (active): HP model core |
-| Workflow | run 21, `new-feature`, stage `tests` (waiting for RED) |
+| Workflow | run 21, `new-feature`: spec ☑, risk ☑ (#28), RED observed ☑, implement ☑ (decision #298), review ☑ (round 1 WARNING → fixed → round 2 APPROVE, decision #304), finalize after commit |
 | Risk assessment | #28, medium: gates `spec`, `tests`, `review:code`. Assessment #27 ("high") was a false positive: the keyword matched the phrase "no secrets" in the description, and the change was reassessed with the same scope. |
 
 ---
@@ -37,7 +38,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 |---|---|---|---|
 | T0.1 | git init (`main`), repo-local identity, `.gitignore`, initial commit of docs | `.gitignore`, `docs/HANDOFF.md`, `docs/PRD.md` | ☑ commit `80dffa5` |
 | T0.2 | Register product spec and Phase 1 domain spec in harness-os | — | ☑ `PFOLD-PROD-001`, `PFOLD-DOM-001` |
-| T0.3 | Harness-os project init (gating hooks + config) | `.claude/harness.config.json`, `.claude/hooks/*`, `.claude/settings.json` | ◐ init done (`d6b01ee`); config edited; waiting on B2 |
+| T0.3 | Harness-os project init (gating hooks + config) | `.claude/harness.config.json`, `.claude/hooks/*`, `.claude/settings.json` | ☑ init `d6b01ee`, reconcile `b3fcef3`, hooks +x `f9c7641`; gate verified live (blocked a probe write) |
 | T0.4 | uv environment + lockfile (Python 3.12.16, numpy 2.5.5, hypothesis 6.170) | `.venv/`, `uv.lock` | ☑ |
 
 ## Phase 1 — Core (PRD §10 row 1)
@@ -46,15 +47,15 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 | ID | Task | Files | Tests (written first) | Status |
 |---|---|---|---|---|
 | T1.1 | Python project: uv env + lockfile, dependencies (numpy; dev: pytest, pytest-cov, hypothesis, scipy, pandas, matplotlib, bandit, pip-audit), Makefile targets `test`, `cov`, `lint`, `audit` | `pyproject.toml`, `uv.lock`, `Makefile`, `src/hpfold/__init__.py`, `src/hpfold_tools/__init__.py` | `make test` runs | ☐ |
-| T1.2 | `parse_sequence` (FR-8): strip whitespace, uppercase, reject non-H/P and empty input | `src/hpfold/hp_model.py` | `tests/test_hp_model.py::test_parse_*` | ☐ |
-| T1.3 | `decode`/`encode` with the (heading, up) frame, for 2D and 3D (FR-1, FR-2) | `src/hpfold/hp_model.py` | hand-checked coordinates; 3D U/D/L frame cases; round trip | ☐ |
-| T1.4 | `is_valid`, `collisions`, `contacts`, `energy` with an O(n) hash map (FR-3, FR-4) | `src/hpfold/hp_model.py` | HPHHHHPHHP → −3 with contacts {(0,5),(3,8),(4,7)}; bonded pairs never count; brute-force O(n²) cross-check; exhaustive enumeration for small n | ☐ |
-| T1.5 | `evaluate(seq, moves, strategy, penalty)` → Evaluation (FR-5, §5.2) | `src/hpfold/hp_model.py` | penalty arithmetic; invalid flagged; repair strategy returns a valid fold | ☐ |
-| T1.6 | `random_valid_fold` (backtracking SAW) and `repair` (FR-6, FR-7) | `src/hpfold/folds.py` | always valid for 2D n ≤ 100 and 3D n ≤ 100; deterministic for a given seed; repair output valid and same length | ☐ |
-| T1.7 | Hypothesis properties: unit bonds; `encode(decode(m)) == m`; energy ≤ 0; energy == brute force; repair(m) valid | `tests/test_hp_properties.py` | (this is the test) | ☐ |
+| T1.2 | `parse_sequence` (FR-8): strip whitespace, uppercase, reject non-H/P and empty input | `src/hpfold/hp_model.py` | `tests/test_hp_model.py::test_parse_*` | ☑ |
+| T1.3 | `decode`/`encode` with the (heading, up) frame, for 2D and 3D (FR-1, FR-2) | `src/hpfold/hp_model.py` | hand-checked coordinates; 3D U/D/L frame cases; round trip | ☑ |
+| T1.4 | `is_valid`, `collisions`, `contacts`, `energy` with an O(n) hash map (FR-3, FR-4) | `src/hpfold/hp_model.py` | HPHHHHPHHP → −3 with contacts {(0,5),(3,8),(4,7)}; bonded pairs never count; brute-force O(n²) cross-check; exhaustive enumeration for small n | ☑ (exhaustive: 3^8 2D and 5^6 3D folds) |
+| T1.5 | `evaluate(seq, moves, strategy, penalty, rng, dim)` → Evaluation (FR-5, §5.2) | `src/hpfold/fitness.py` | `tests/test_fitness.py`: penalty arithmetic; invalid flagged; repair strategy returns a valid fold | ☑ |
+| T1.6 | `random_valid_fold` (backtracking SAW) and `repair` (FR-6, FR-7) | `src/hpfold/folds.py` | always valid for 2D n ≤ 100 and 3D n ≤ 100; deterministic for a given seed; repair output valid and same length | ☑ |
+| T1.7 | Hypothesis properties: unit bonds; `encode(decode(m)) == m`; energy ≤ 0; energy == brute force; repair(m) valid | `tests/test_hp_properties.py` | (this is the test) + parse_sequence fuzzing | ☑ |
 | T1.8 | Benchmarks from the primary literature: 2D set (8–11 sequences, n ≈ 20–100) and 3D subset (3–5), each with a citation; source disagreements recorded (FR-B1 to B5) | `data/benchmarks.json`, `docs/benchmarks_sources.md` | `tests/test_benchmarks.py`: alphabet, stated length == len(seq), every entry has a source, energies ≤ 0 | ☐ |
 | T1.9 | Matplotlib fold plot, 2D and 3D (tooling package) | `src/hpfold_tools/visualize.py` | `tests/test_visualize.py` smoke test (writes PNG to tmp_path) | ☐ |
-| T1.10 | Purity guard: the core package imports only stdlib + numpy | `tests/test_core_purity.py` | AST scan of `src/hpfold/**` imports | ☐ |
+| T1.10 | Purity guard: the core package imports only stdlib + numpy | `tests/test_core_purity.py` | AST scan of `src/hpfold/**` imports | ☑ |
 
 ## Phase 2 — Algorithms (PRD §10 row 2)
 **Exit criteria:** all three reach a reasonable energy on a 20-mer in 2D and 3D; seeds reproduce; budget exact; cancel and progress frames work.
@@ -123,14 +124,14 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 ## Cross-cutting — quality & security (run in every Code Review stage)
 | ID | Check | Tool / file | Status |
 |---|---|---|---|
-| Q1 | Python SAST | `bandit -r src` (`make lint`) | ☐ |
+| Q1 | Python SAST | `bandit -r src` (`make lint`) | ◐ clean on Phase 1 code (Makefile target pending) |
 | Q2 | Python SCA | `pip-audit` (`make audit`) | ☐ |
 | Q3 | JS SAST + SCA | ESLint security rules, `npm audit` | ☐ (Phase 5) |
 | Q4 | Semgrep (Python + TS rulesets) | `semgrep --config auto` | ☐ |
-| Q5 | Fuzzing | Hypothesis (core), fast-check (web parser and URL decoder) | ☐ |
+| Q5 | Fuzzing | Hypothesis (core), fast-check (web parser and URL decoder) | ◐ Hypothesis on the core (incl. parse_sequence fuzzing); web pending |
 | Q6 | Dependabot | `.github/dependabot.yml`. Takes effect only once a GitHub remote exists. | ☐ |
 | Q7 | DAST (optional) | OWASP ZAP baseline against the deployed site | ☐ |
-| Q8 | Coverage ≥ 90% on `hp_model`, ≥ 80% overall | `pytest --cov` + `validate_coverage` | ☐ |
+| Q8 | Coverage ≥ 90% on `hp_model`, ≥ 80% overall | `pytest --cov` + `validate_coverage` | ◐ 99% on `src/hpfold` (Phase 1) |
 
 ---
 
@@ -139,9 +140,9 @@ Every row is a required task.
 
 | # | Case | Expected | Test location | Status |
 |---|---|---|---|---|
-| E1 | Characters other than H/P; empty input | Reject with a clear message | `tests/test_hp_model.py::test_parse_rejects_*`; `web/src/solver/input.test.ts` | ☐ |
-| E2 | Lowercase / whitespace | Normalized | `tests/test_hp_model.py::test_parse_normalizes`; web input test | ☐ |
-| E3 | n < 3 | Library: trivial fold, E = 0; web: rejected | `tests/test_hp_model.py::test_short_sequences`; web input test | ☐ |
+| E1 | Characters other than H/P; empty input | Reject with a clear message | `tests/test_hp_model.py::test_parse_rejects_*`; `web/src/solver/input.test.ts` | ◐ library ☑; web pending |
+| E2 | Lowercase / whitespace | Normalized | `tests/test_hp_model.py::test_parse_normalizes`; web input test | ◐ library ☑; web pending |
+| E3 | n < 3 | Library: trivial fold, E = 0; web: rejected | `tests/test_hp_model.py::test_short_sequences_are_trivial`, `tests/test_fitness.py::test_trivial_sequences`; web input test | ◐ library ☑; web pending |
 | E4 | n > 100 on the web | Rejected with an explanation (CLI has no cap) | web input test; `tests/test_algorithm_contract.py::test_no_cap_in_library` | ☐ |
 | E5 | No H / single H | E = 0; runs normally; the page notes it | `tests/test_algorithm_contract.py::test_no_contacts_possible`; Playwright | ☐ |
 | E6 | All-H sequence | Valid stress test | `tests/test_algorithm_contract.py::test_all_h` | ☐ |
@@ -179,6 +180,10 @@ Design decisions, especially where the PRD left details open.
 | D1 | 2026-11-24 | Git: branch `main`, repo-local identity from the user's account email | User choice; no global git identity configured |
 | D2 | 2026-11-24 | Core package `src/hpfold` (stdlib + numpy only) and tooling package `src/hpfold_tools` (scipy, pandas, matplotlib, multiprocessing, I/O) | PRD §5.3/§9: the core must run unmodified in Pyodide; enforced by T1.10 |
 | D3 | 2026-11-24 | Benchmarks stored as `data/benchmarks.json`, with source notes in `docs/benchmarks_sources.md` | JSON is readable by both Python and the webpage without conversion |
+| D6 | 2026-11-24 | `evaluate` lives in `src/hpfold/fitness.py` (not hp_model) and takes an explicit `dim` (inferred from U/D letters only if omitted); `DEFAULT_PENALTY = 2.0` provisional until T3.2 | Avoids a circular import hp_model ↔ folds; algorithms know their lattice, so repair must not guess it |
+| D7 | 2026-11-24 | `repair` = the same DFS as `random_valid_fold`, but trying the fold's own move first at each position | Keeps the valid prefix unchanged and alters the fold minimally; always returns a valid fold |
+| D8 | 2026-11-24 | Fold growth uses random restarts: per-attempt backtrack budget `BACKTRACKS_PER_BEAD = 50` × n, up to `MAX_ATTEMPTS = 100`; repair prefers the original moves for the first half of the attempts | Review H1: plain DFS hit a 200k-backtrack cap in ~0.07% of n=100 folds; with restarts, 0 failures in 3000 (n=100), 300 (n=200), 100 (n=400) runs; ~0.6 ms per n=100 fold |
+| D9 | 2026-11-24 | `evaluate(sequence, moves, dim, ...)`: `dim` is required; moves are checked against it in both strategies; the sequence must already be uppercase H/P (`parse_sequence` output); the penalty must be finite and ≥ 0 | Review M2/L2/L3: inferring dim from U/D letters would silently confine 3D repair to a plane |
 | D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
@@ -187,5 +192,7 @@ Open details to decide during implementation (to be logged here): penalty λ def
 ---
 
 ## Changelog
+- 2026-11-24 — Review round 1 (WARNING: H1, M1–M3, L1–L5) → fixes test-first (new tests observed RED → GREEN) → round 2 APPROVE. 114 tests, 99% coverage, Bandit clean. Mutants (D-frame, U-frame, R=L) now caught.
+- 2026-11-24 — Phase 1 unit 1: 5 test files written → observed RED (harness) → Gate 1 approved → hp_model/folds/fitness implemented → 76 tests pass, coverage 98% (core), Bandit clean → code review requested.
 - 2026-11-24 — `harness init` done by the user (`d6b01ee`). Config fixed (D5); uv env created; waiting on B2.
 - 2026-11-24 — Plan created. Phase 0 done (commit `80dffa5`). Harness specs registered. Blocked on B1 (`harness init`).
