@@ -1,0 +1,20 @@
+# Quick end-to-end check of the experiment pipeline (a few seconds).
+name = "smoke"
+dim = 2
+instances = ["S1-1", "S1-4"]
+seeds = 3
+budget_c = 2
+budget_min = 2000
+stop_at_best_known = true
+
+[[variants]]
+label = "GA"
+algorithm = "GA"
+
+[[variants]]
+label = "ACO"
+algorithm = "ACO"
+
+[[variants]]
+label = "PSO"
+algorithm = "PSO"

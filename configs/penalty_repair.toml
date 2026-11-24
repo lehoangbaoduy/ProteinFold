@@ -1,0 +1,50 @@
+# T3.2 / PRD §7.4 — constraint handling mini-experiment.
+# GA and PSO under penalty (lambda = 1, 2, 5) and Lamarckian repair.
+# ACO is excluded: its ants only ever build valid folds.
+name = "penalty_repair"
+dim = 2
+instances = ["S1-4", "S1-5", "S1-7"]
+seeds = 30
+budget_c = 10
+budget_min = 10000
+stop_at_best_known = true
+
+[[variants]]
+label = "GA-penalty1"
+algorithm = "GA"
+params = { strategy = "penalty", penalty = 1.0 }
+
+[[variants]]
+label = "GA-penalty2"
+algorithm = "GA"
+params = { strategy = "penalty", penalty = 2.0 }
+
+[[variants]]
+label = "GA-penalty5"
+algorithm = "GA"
+params = { strategy = "penalty", penalty = 5.0 }
+
+[[variants]]
+label = "GA-repair"
+algorithm = "GA"
+params = { strategy = "repair" }
+
+[[variants]]
+label = "PSO-penalty1"
+algorithm = "PSO"
+params = { strategy = "penalty", penalty = 1.0 }
+
+[[variants]]
+label = "PSO-penalty2"
+algorithm = "PSO"
+params = { strategy = "penalty", penalty = 2.0 }
+
+[[variants]]
+label = "PSO-penalty5"
+algorithm = "PSO"
+params = { strategy = "penalty", penalty = 5.0 }
+
+[[variants]]
+label = "PSO-repair"
+algorithm = "PSO"
+params = { strategy = "repair" }
