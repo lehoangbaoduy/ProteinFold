@@ -14,12 +14,13 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 |---|---|
 | **Phase** | 1 — Core |
 | **Last update** | 2026-11-24 |
-| **Next action** | ⊘ The user must run `harness init` (interactive and human-only by design). See Blockers. |
+| **Next action** | ⊘ User: `chmod +x .claude/hooks/*.sh`, then `harness reconcile-config`, then restart the Claude Code session so the hooks load (B2). After that: Phase 1, T1.2–T1.7 tests first (RED). |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
 |---|---|---|---|
-| B1 | Harness-os gating is not initialized for this project: no `.claude/harness.config.json` or `enforce-gate.sh` hooks. The `new-feature` workflow (run 21) is waiting for a host-observed RED test run, which only those hooks can record. `harness init` is TTY-gated, so Claude cannot run it. | User | 2026-11-24 |
+| B1 | ~~Harness-os not initialized~~. Resolved: the user ran `harness init` (commit `d6b01ee`). | User | resolved 2026-11-24 |
+| B2 | The generated hook scripts are mode 644 (not executable), so the gate would fail open. The test command `pytest` used the user-level Python without project dependencies, so Claude changed it to `uv run pytest` and added web globs; this needs `reconcile-config`. Hooks load only at session start, so the session must be restarted. | User | 2026-11-24 |
 
 ### Harness-os state
 | Item | Value |
@@ -36,7 +37,8 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 |---|---|---|---|
 | T0.1 | git init (`main`), repo-local identity, `.gitignore`, initial commit of docs | `.gitignore`, `docs/HANDOFF.md`, `docs/PRD.md` | ☑ commit `80dffa5` |
 | T0.2 | Register product spec and Phase 1 domain spec in harness-os | — | ☑ `PFOLD-PROD-001`, `PFOLD-DOM-001` |
-| T0.3 | Harness-os project init (gating hooks + config) | `.claude/harness.config.json`, `.claude/hooks/*`, `.claude/settings.json` | ⊘ B1 (user) |
+| T0.3 | Harness-os project init (gating hooks + config) | `.claude/harness.config.json`, `.claude/hooks/*`, `.claude/settings.json` | ◐ init done (`d6b01ee`); config edited; waiting on B2 |
+| T0.4 | uv environment + lockfile (Python 3.12.16, numpy 2.5.5, hypothesis 6.170) | `.venv/`, `uv.lock` | ☑ |
 
 ## Phase 1 — Core (PRD §10 row 1)
 **Exit criteria:** E = −3 check passes; brute-force energy tests pass; benchmarks cited; ≥ 90% coverage on the HP model.
@@ -177,6 +179,7 @@ Design decisions, especially where the PRD left details open.
 | D1 | 2026-11-24 | Git: branch `main`, repo-local identity from the user's account email | User choice; no global git identity configured |
 | D2 | 2026-11-24 | Core package `src/hpfold` (stdlib + numpy only) and tooling package `src/hpfold_tools` (scipy, pandas, matplotlib, multiprocessing, I/O) | PRD §5.3/§9: the core must run unmodified in Pyodide; enforced by T1.10 |
 | D3 | 2026-11-24 | Benchmarks stored as `data/benchmarks.json`, with source notes in `docs/benchmarks_sources.md` | JSON is readable by both Python and the webpage without conversion |
+| D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
 Open details to decide during implementation (to be logged here): penalty λ default; ACO γ, deposit rule, τ bounds; PSO ε, w, c₁, c₂; budget constant c in B(n) = c·n²; trace frame interval k; web effort multipliers and length cap (after T2.6); choice between GitHub Pages and Vercel.
@@ -184,4 +187,5 @@ Open details to decide during implementation (to be logged here): penalty λ def
 ---
 
 ## Changelog
+- 2026-11-24 — `harness init` done by the user (`d6b01ee`). Config fixed (D5); uv env created; waiting on B2.
 - 2026-11-24 — Plan created. Phase 0 done (commit `80dffa5`). Harness specs registered. Blocked on B1 (`harness init`).
