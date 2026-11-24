@@ -14,7 +14,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 |---|---|
 | **Phase** | 1 — Core ☑ (exit criteria met) → next: Phase 2 — Algorithms |
 | **Last update** | 2026-11-24 |
-| **Next action** | Phase 2, T2.3: ACO (construction, pheromone, dead-end restarts) — must pass the shared contract. |
+| **Next action** | Phase 2, T2.6: Pyodide timing spike (run GA/ACO/PSO in Pyodide at n = 20, 48, 100; set web effort presets and length cap). |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
@@ -66,9 +66,9 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 |---|---|---|---|---|
 | T2.1 | Shared interface: `RunResult`, `Frame`, evaluation counter with an exact budget, `target`, `on_progress`, `should_stop`; NA result when no valid fold is found | `src/hpfold/algorithms/base.py` | `tests/test_algorithm_contract.py` (parametrized over every algorithm): budget never exceeded and exactly reached unless the target is hit or the run is cancelled; same seed gives an identical result; frames are monotone; cancel returns best-so-far; NA when no valid fold | ☑ + `RunResult.to_dict`, frames agree with history, seed/target validation |
 | T2.2 | GA (§5.3): tournament, 1-point/2-point/uniform crossover, per-gene mutation, elitism, penalty or repair | `src/hpfold/algorithms/ga.py` | `tests/test_ga.py` + contract | ☑ review APPROVE + fixes |
-| T2.3 | ACO (§5.3): τ[i][m], heuristic η from new H–H contacts, bounded backtracking + restart, evaporation, deposit rule, optional MMAS bounds; one evaluation per completed fold | `src/hpfold/algorithms/aco.py` | `tests/test_aco.py`: always valid folds; eval count == completed ants; τ stays within bounds + contract | ☐ |
-| T2.4 | PSO (§5.3): probability matrices, w/c₁/c₂ update, row renormalization, floor ε, sampling, penalty or repair | `src/hpfold/algorithms/pso.py` | `tests/test_pso.py`: rows sum to 1; min ≥ ε; no one-hot collapse + contract | ☐ |
-| T2.5 | Frame `matrix` + `diversity` per algorithm (FR-T1) | the three algorithm files | frame schema test | ☐ |
+| T2.3 | ACO (§5.3): τ[i][m], heuristic η from new H–H contacts, bounded backtracking + restart, evaporation, deposit rule, optional MMAS bounds; one evaluation per completed fold | `src/hpfold/algorithms/aco.py` | `tests/test_aco.py`: always valid folds; eval count == completed ants; τ stays within bounds; backtrack + restart paths; heuristic bias; colony diversity + contract | ☑ review APPROVE + fixes (`c73146a`) |
+| T2.4 | PSO (§5.3): probability matrices, w/c₁/c₂ update, row renormalization, floor ε, sampling, penalty or repair | `src/hpfold/algorithms/pso.py` | `tests/test_pso.py`: rows sum to 1; min ≥ ε; no one-hot collapse; exact update; ring indices; r1/r2 independence; diversity source + contract | ☑ review APPROVE + mutant-killing tests (`b19f7f0`) |
+| T2.5 | Frame `matrix` + `diversity` per algorithm (FR-T1) | the three algorithm files | frame schema test | ☑ (contract `test_progress_frames`, D17) |
 | T2.6 | Pyodide timing spike: run GA/ACO/PSO in Pyodide (Node or browser) at n = 20, 48, 100; set effort multipliers and the length cap | `web/spike/` (throwaway), results → Decisions log | timings recorded | ☐ |
 | T2.7 | *(Could)* Pull-move local search + hybrid ACO-LS; LS evaluations count toward the budget | `src/hpfold/local_search.py`, `src/hpfold/algorithms/hybrid.py` | `tests/test_local_search.py`: moves keep validity; energy never worsens | ☐ |
 
@@ -146,12 +146,12 @@ Every row is a required task.
 | E2 | Lowercase / whitespace | Normalized | `tests/test_hp_model.py::test_parse_normalizes`; web input test | ◐ library ☑; web pending |
 | E3 | n < 3 | Library: trivial fold, E = 0; web: rejected | `tests/test_hp_model.py::test_short_sequences_are_trivial`, `tests/test_fitness.py::test_trivial_sequences`; web input test | ◐ library ☑; web pending |
 | E4 | n > 100 on the web | Rejected with an explanation (CLI has no cap) | web input test; `tests/test_algorithm_contract.py::test_no_cap_in_library` | ☐ |
-| E5 | No H / single H | E = 0; runs normally; the page notes it | `tests/test_algorithm_contract.py::test_no_contacts_possible`; Playwright | ☐ |
-| E6 | All-H sequence | Valid stress test | `tests/test_algorithm_contract.py::test_all_h` | ☐ |
+| E5 | No H / single H | E = 0; runs normally; the page notes it | `tests/test_algorithm_contract.py::test_no_contacts_possible_runs_normally`; Playwright | ◐ library ☑; web pending |
+| E6 | All-H sequence | Valid stress test | `tests/test_algorithm_contract.py::test_all_h_stress` | ☑ |
 | E7 | Never finds a valid fold (penalty) | best_energy = NA; counted as a failure; page says "no valid fold found" | `tests/test_algorithm_contract.py::test_no_valid_fold_is_na`; `tests/test_analysis.py::test_na_is_failure`; Playwright | ☐ |
-| E8 | ACO ant dead end | Bounded backtracking → restart; restarts logged | `tests/test_aco.py::test_dead_end_restart` | ☐ |
-| E9 | PSO one-hot collapse | Prevented by ε; diversity logged | `tests/test_pso.py::test_floor_prevents_collapse` | ☐ |
-| E10 | Fitness ties | Deterministic (stable sort) | `tests/test_algorithm_contract.py::test_determinism` | ☐ |
+| E8 | ACO ant dead end | Bounded backtracking → restart; restarts logged | `tests/test_aco.py::test_dead_ends_trigger_counted_restarts_and_stay_valid`, `test_backtracking_path_without_restarts`, `test_fallback_after_max_restarts_is_valid_and_flagged` | ☑ |
+| E9 | PSO one-hot collapse | Prevented by ε; diversity logged | `tests/test_pso.py::test_floor_prevents_collapse` | ☑ |
+| E10 | Fitness ties | Deterministic (stable sort) | `tests/test_algorithm_contract.py::test_same_seed_same_result_different_seed_differs` | ☑ |
 | E11 | Disputed best-known / 3D lower bound | Both stored and cited; success uses the better value; flagged | `tests/test_benchmarks.py`; `tests/test_analysis.py::test_success_uses_best_value` | ◐ data side ☑ (no E* disputes found; sequence disputes recorded per instance); analysis side pending |
 | E12 | Target reached early | Stop; evals_to_best recorded; page shows "reached best-known" | `tests/test_algorithm_contract.py::test_target_early_stop`; Playwright | ☐ |
 | E13 | Cancel / tab closed mid-run | Workers terminated; partial best shown | `tests/test_algorithm_contract.py::test_cancel`; Playwright | ☐ |
@@ -192,6 +192,11 @@ Design decisions, especially where the PRD left details open.
 | D13 | 2026-11-24 | Algorithm contract: `run(sequence, dim, params, seed, budget, target, on_progress, should_stop)`; budget enforced by `Evaluator`; cancel checked before every iteration (incl. the first); history starts at (0, None) and is recorded once per iteration; frames show the fittest VALID fold of the population; `RunResult.to_dict()` is JSON-ready | Review of unit PFOLD-DOM-003 |
 | D14 | 2026-11-24 | GA defaults: pop 100, two-point crossover, pc 0.9, pm 2/L, tournament k 3, elite 2, penalty λ 2 (provisional until T3.2/T3.3) | Common textbook values; tuned later with equal effort per algorithm |
 | D15 | 2026-11-24 | Open performance note: GA throughput (native CPython) ~24k evals/s at n=20 and ~8k at n=100 with penalty, but only ~430 evals/s at n=100 2D with repair (repair DFS on every colliding child) | Decide the strategy in T3.2; calibrate web effort presets in T2.6; consider optimizing `contacts`/repair if repair wins |
+| D16 | 2026-11-24 | ACO provisional defaults: 30 ants, α 1, β 2, γ 1, ρ 0.05, τ ∈ [0.1, 2.0], deposit = iteration-best + global-best, backtrack limit 50, 20 restarts | The first defaults (ρ 0.2, τ ∈ [0.05, 5]) stagnated at E = −6 on S1-1; pilot sweep picked these (see D19) |
+| D17 | 2026-11-24 | Frame diversity is always computed from realized move frequencies (GA population, ACO colony, PSO swarm positions); the heatmap shows each algorithm's internals (GA frequencies, ACO pheromone τ^α, PSO probabilities of the swarm-best particle) | Review: clamped pheromone entropy is not comparable with GA diversity |
+| D18 | 2026-11-24 | Native throughput at n = 100 (2D, penalty): GA ~8k, PSO ~7.6k, ACO ~1.5k evals/s; repair is 4–20× slower | Equal-evaluation comparison; report wall-clock alongside evaluations in the paper |
+| D19 | 2026-11-24 | PSO provisional defaults: swarm 30, w 0.9, c1 = c2 = 0.5, ε 0.03, global topology; GA provisional tournament k = 5. All three algorithms received the same pilot (7 configs × 4 seeds × 20k evals on S1-1): GA mean −8.75, ACO −9, PSO −8.5 | Textbook PSO defaults stagnated at −6; the reviewer flagged unequal tuning, so the GA got the identical pilot. S1-1 is the pilot instance: flag it in the paper; T3.3 tunes on held-out sequences with equal effort |
+| D20 | 2026-11-24 | Accepted test gap: which particle's matrix is shown in a PSO frame (the swarm-best owner) is not pinned by a test | Would require exposing swarm internals; behaviour is verified by review |
 | D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
@@ -200,6 +205,8 @@ Open details to decide during implementation (to be logged here): penalty λ def
 ---
 
 ## Changelog
+- 2026-11-24 — Phase 2 unit 3 (PSO, `b19f7f0`): tests → RED → implemented → pilot defaults → review APPROVE → mutant-killing tests; GA got the same pilot sweep (k = 5). 371 tests. **All three algorithms done.**
+- 2026-11-24 — Phase 2 unit 2 (ACO, `c73146a`): defaults fixed after stagnation (pilot sweep) → review APPROVE with 3 MEDIUM → fixed test-first. (Progress entry added late: the original update was skipped when `make lint` failed in the same script.)
 - 2026-11-24 — Phase 2 unit 1 (interface + GA): contract + GA tests → RED → implemented → review APPROVE with 4 MEDIUM → fixed test-first → 232 tests, 98% coverage.
 - 2026-11-24 — T1.9 fold plot + T1.1 Makefile: review round 1 (6 MEDIUM) → fixed test-first → round 2 APPROVE. 159 tests. **Phase 1 complete.**
 - 2026-11-24 — T1.8 benchmarks: 21 instances generated by script, cited and cross-checked; harness run 22 RED re-demonstrated with user approval (sequencing slip); review APPROVE; golden pins added. 142 tests.
