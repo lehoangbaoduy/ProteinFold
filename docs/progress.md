@@ -14,7 +14,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 |---|---|
 | **Phase** | 1 — Core ☑ (exit criteria met) → next: Phase 2 — Algorithms |
 | **Last update** | 2026-11-24 |
-| **Next action** | Phase 2, T2.1: shared algorithm interface (RunResult, evaluation counter, frames, cancel) and its contract tests, then the GA (T2.2). |
+| **Next action** | Phase 2, T2.3: ACO (construction, pheromone, dead-end restarts) — must pass the shared contract. |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
@@ -64,8 +64,8 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | ID | Task | Files | Tests (written first) | Status |
 |---|---|---|---|---|
-| T2.1 | Shared interface: `RunResult`, `Frame`, evaluation counter with an exact budget, `target`, `on_progress`, `should_stop`; NA result when no valid fold is found | `src/hpfold/algorithms/base.py` | `tests/test_algorithm_contract.py` (parametrized over every algorithm): budget never exceeded and exactly reached unless the target is hit or the run is cancelled; same seed gives an identical result; frames are monotone; cancel returns best-so-far; NA when no valid fold | ☐ |
-| T2.2 | GA (§5.3): tournament, 1-point/2-point/uniform crossover, per-gene mutation, elitism, penalty or repair | `src/hpfold/algorithms/ga.py` | `tests/test_ga.py` + contract | ☐ |
+| T2.1 | Shared interface: `RunResult`, `Frame`, evaluation counter with an exact budget, `target`, `on_progress`, `should_stop`; NA result when no valid fold is found | `src/hpfold/algorithms/base.py` | `tests/test_algorithm_contract.py` (parametrized over every algorithm): budget never exceeded and exactly reached unless the target is hit or the run is cancelled; same seed gives an identical result; frames are monotone; cancel returns best-so-far; NA when no valid fold | ☑ + `RunResult.to_dict`, frames agree with history, seed/target validation |
+| T2.2 | GA (§5.3): tournament, 1-point/2-point/uniform crossover, per-gene mutation, elitism, penalty or repair | `src/hpfold/algorithms/ga.py` | `tests/test_ga.py` + contract | ☑ review APPROVE + fixes |
 | T2.3 | ACO (§5.3): τ[i][m], heuristic η from new H–H contacts, bounded backtracking + restart, evaporation, deposit rule, optional MMAS bounds; one evaluation per completed fold | `src/hpfold/algorithms/aco.py` | `tests/test_aco.py`: always valid folds; eval count == completed ants; τ stays within bounds + contract | ☐ |
 | T2.4 | PSO (§5.3): probability matrices, w/c₁/c₂ update, row renormalization, floor ε, sampling, penalty or repair | `src/hpfold/algorithms/pso.py` | `tests/test_pso.py`: rows sum to 1; min ≥ ε; no one-hot collapse + contract | ☐ |
 | T2.5 | Frame `matrix` + `diversity` per algorithm (FR-T1) | the three algorithm files | frame schema test | ☐ |
@@ -189,6 +189,9 @@ Design decisions, especially where the PRD left details open.
 | D10 | 2026-11-24 | Benchmarks: Thachuk et al. 2007 Table 1 is the primary transcription source, cross-checked against Shmygelska & Hoos 2005; all `energy_kind = best_known` | Both papers agree on all 21 E*; the 2005 S1-6 and S2-1 notations fail their own length checks (51/47) |
 | D11 | 2026-11-24 | Quality targets: `make lint` = ruff, `make sec` = Bandit, `make cov` fails under 90% on `src/hpfold`, `make audit` = pip-audit of `uv export`; the dev group includes the tooling deps | Review M1/M6: fresh-clone `make test` must work; lint and security scans are separate concerns |
 | D12 | 2026-11-24 | Fold plots: `plot_fold` requires an already-normalized sequence (no silent lowercase handling); 3D uses an equal box aspect; `save_fold` requires a file suffix and creates parent directories | Review M3/L3/L4 |
+| D13 | 2026-11-24 | Algorithm contract: `run(sequence, dim, params, seed, budget, target, on_progress, should_stop)`; budget enforced by `Evaluator`; cancel checked before every iteration (incl. the first); history starts at (0, None) and is recorded once per iteration; frames show the fittest VALID fold of the population; `RunResult.to_dict()` is JSON-ready | Review of unit PFOLD-DOM-003 |
+| D14 | 2026-11-24 | GA defaults: pop 100, two-point crossover, pc 0.9, pm 2/L, tournament k 3, elite 2, penalty λ 2 (provisional until T3.2/T3.3) | Common textbook values; tuned later with equal effort per algorithm |
+| D15 | 2026-11-24 | Open performance note: GA throughput (native CPython) ~24k evals/s at n=20 and ~8k at n=100 with penalty, but only ~430 evals/s at n=100 2D with repair (repair DFS on every colliding child) | Decide the strategy in T3.2; calibrate web effort presets in T2.6; consider optimizing `contacts`/repair if repair wins |
 | D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
@@ -197,6 +200,7 @@ Open details to decide during implementation (to be logged here): penalty λ def
 ---
 
 ## Changelog
+- 2026-11-24 — Phase 2 unit 1 (interface + GA): contract + GA tests → RED → implemented → review APPROVE with 4 MEDIUM → fixed test-first → 232 tests, 98% coverage.
 - 2026-11-24 — T1.9 fold plot + T1.1 Makefile: review round 1 (6 MEDIUM) → fixed test-first → round 2 APPROVE. 159 tests. **Phase 1 complete.**
 - 2026-11-24 — T1.8 benchmarks: 21 instances generated by script, cited and cross-checked; harness run 22 RED re-demonstrated with user approval (sequencing slip); review APPROVE; golden pins added. 142 tests.
 - 2026-11-24 — Review round 1 (WARNING: H1, M1–M3, L1–L5) → fixes test-first (new tests observed RED → GREEN) → round 2 APPROVE. 114 tests, 99% coverage, Bandit clean. Mutants (D-frame, U-frame, R=L) now caught.
