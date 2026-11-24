@@ -18,9 +18,9 @@ from hpfold.hp_model import (
 
 __all__ = [
     "DEFAULT_PENALTY",
-    "Evaluation",
     "MOVES_2D",
     "MOVES_3D",
+    "Evaluation",
     "alphabet_for",
     "collisions",
     "contacts",

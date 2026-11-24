@@ -22,9 +22,9 @@ def brute_energy(seq, coords):
     """Independent O(n^2) reference: count H-H pairs at unit distance that are not chain neighbours."""
     e = 0
     for i, j in itertools.combinations(range(len(seq)), 2):
-        if j > i + 1 and seq[i] == seq[j] == "H":
-            if sum(abs(a - b) for a, b in zip(coords[i], coords[j])) == 1:
-                e -= 1
+        adjacent = sum(abs(a - b) for a, b in zip(coords[i], coords[j])) == 1
+        if j > i + 1 and seq[i] == seq[j] == "H" and adjacent:
+            e -= 1
     return e
 
 

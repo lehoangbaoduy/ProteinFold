@@ -22,6 +22,7 @@ on adjacent lattice sites. Computed in O(n) with a site -> beads hash map.
 
 from __future__ import annotations
 
+import itertools
 from collections.abc import Sequence
 
 MOVES_2D = "FLR"
@@ -133,7 +134,7 @@ def encode(coords: Sequence[Sequence[int]]) -> str:
         raise ValueError("encode expects the first bond to point along +x")
     heading, up = INITIAL_HEADING, INITIAL_UP
     out = []
-    for a, b in zip(pts[1:], pts[2:]):
+    for a, b in itertools.pairwise(pts[1:]):
         bond = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
         move = _move_for_bond(heading, up, bond)
         if move is None:

@@ -12,9 +12,9 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | | |
 |---|---|
-| **Phase** | 1 — Core |
+| **Phase** | 1 — Core ☑ (exit criteria met) → next: Phase 2 — Algorithms |
 | **Last update** | 2026-11-24 |
-| **Next action** | Phase 1: T1.9 (matplotlib fold plot, tooling package) → T1.1 Makefile targets → Phase 1 exit check. |
+| **Next action** | Phase 2, T2.1: shared algorithm interface (RunResult, evaluation counter, frames, cancel) and its contract tests, then the GA (T2.2). |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
@@ -46,7 +46,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | ID | Task | Files | Tests (written first) | Status |
 |---|---|---|---|---|
-| T1.1 | Python project: uv env + lockfile, dependencies (numpy; dev: pytest, pytest-cov, hypothesis, scipy, pandas, matplotlib, bandit, pip-audit), Makefile targets `test`, `cov`, `lint`, `audit` | `pyproject.toml`, `uv.lock`, `Makefile`, `src/hpfold/__init__.py`, `src/hpfold_tools/__init__.py` | `make test` runs | ☐ |
+| T1.1 | Python project: uv env + lockfile, dependencies (numpy; dev: pytest, pytest-cov, hypothesis, scipy, pandas, matplotlib, bandit, pip-audit), Makefile targets `test`, `cov`, `lint`, `audit` | `pyproject.toml`, `uv.lock`, `Makefile`, `src/hpfold/__init__.py`, `src/hpfold_tools/__init__.py` | `make test`/`cov`/`lint`/`sec`/`audit`/`check` | ☑ |
 | T1.2 | `parse_sequence` (FR-8): strip whitespace, uppercase, reject non-H/P and empty input | `src/hpfold/hp_model.py` | `tests/test_hp_model.py::test_parse_*` | ☑ |
 | T1.3 | `decode`/`encode` with the (heading, up) frame, for 2D and 3D (FR-1, FR-2) | `src/hpfold/hp_model.py` | hand-checked coordinates; 3D U/D/L frame cases; round trip | ☑ |
 | T1.4 | `is_valid`, `collisions`, `contacts`, `energy` with an O(n) hash map (FR-3, FR-4) | `src/hpfold/hp_model.py` | HPHHHHPHHP → −3 with contacts {(0,5),(3,8),(4,7)}; bonded pairs never count; brute-force O(n²) cross-check; exhaustive enumeration for small n | ☑ (exhaustive: 3^8 2D and 5^6 3D folds) |
@@ -54,8 +54,10 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 | T1.6 | `random_valid_fold` (backtracking SAW) and `repair` (FR-6, FR-7) | `src/hpfold/folds.py` | always valid for 2D n ≤ 100 and 3D n ≤ 100; deterministic for a given seed; repair output valid and same length | ☑ |
 | T1.7 | Hypothesis properties: unit bonds; `encode(decode(m)) == m`; energy ≤ 0; energy == brute force; repair(m) valid | `tests/test_hp_properties.py` | (this is the test) + parse_sequence fuzzing | ☑ |
 | T1.8 | Benchmarks from the primary literature: 2D set (8–11 sequences, n ≈ 20–100) and 3D subset (3–5), each with a citation; source disagreements recorded (FR-B1 to B5) | `data/benchmarks.json`, `docs/benchmarks_sources.md` | `tests/test_benchmarks.py`: alphabet, length, cited sources, independent notation expansion, contact bound, 21 golden pins | ☑ 21 instances (11 2D, 10 3D); reviewer re-verified against the source XML |
-| T1.9 | Matplotlib fold plot, 2D and 3D (tooling package) | `src/hpfold_tools/visualize.py` | `tests/test_visualize.py` smoke test (writes PNG to tmp_path) | ☐ |
+| T1.9 | Matplotlib fold plot, 2D and 3D (tooling package) | `src/hpfold_tools/visualize.py` | `tests/test_visualize.py`: contact endpoints, bead positions, H/P fills, no figure leaks, axes/dim checks, save paths | ☑ visually inspected 2D and 3D renders |
 | T1.10 | Purity guard: the core package imports only stdlib + numpy | `tests/test_core_purity.py` | AST scan of `src/hpfold/**` imports | ☑ |
+
+**Phase 1 exit check (2026-11-24):** E = −3 ☑ · brute-force + exhaustive energy tests ☑ · 21 benchmarks cited and re-verified ☑ · coverage 99.3% (≥ 90%) ☑ · ruff/Bandit/pip-audit clean ☑
 
 ## Phase 2 — Algorithms (PRD §10 row 2)
 **Exit criteria:** all three reach a reasonable energy on a 20-mer in 2D and 3D; seeds reproduce; budget exact; cancel and progress frames work.
@@ -124,14 +126,14 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 ## Cross-cutting — quality & security (run in every Code Review stage)
 | ID | Check | Tool / file | Status |
 |---|---|---|---|
-| Q1 | Python SAST | `bandit -r src` (`make lint`) | ◐ clean on Phase 1 code (Makefile target pending) |
-| Q2 | Python SCA | `pip-audit` (`make audit`) | ☐ |
+| Q1 | Python SAST | `make sec` (Bandit) | ☑ Phase 1 clean |
+| Q2 | Python SCA | `make audit` (pip-audit on the uv lock export) | ☑ Phase 1: no known vulnerabilities |
 | Q3 | JS SAST + SCA | ESLint security rules, `npm audit` | ☐ (Phase 5) |
 | Q4 | Semgrep (Python + TS rulesets) | `semgrep --config auto` | ☐ |
 | Q5 | Fuzzing | Hypothesis (core), fast-check (web parser and URL decoder) | ◐ Hypothesis on the core (incl. parse_sequence fuzzing); web pending |
 | Q6 | Dependabot | `.github/dependabot.yml`. Takes effect only once a GitHub remote exists. | ☐ |
 | Q7 | DAST (optional) | OWASP ZAP baseline against the deployed site | ☐ |
-| Q8 | Coverage ≥ 90% on `hp_model`, ≥ 80% overall | `pytest --cov` + `validate_coverage` | ◐ 99% on `src/hpfold` (Phase 1) |
+| Q8 | Coverage ≥ 90% on `hp_model`, ≥ 80% overall | `make cov` (fails under 90% on `src/hpfold`) | ◐ 99.3% on `src/hpfold` (Phase 1) |
 
 ---
 
@@ -185,6 +187,8 @@ Design decisions, especially where the PRD left details open.
 | D8 | 2026-11-24 | Fold growth uses random restarts: per-attempt backtrack budget `BACKTRACKS_PER_BEAD = 50` × n, up to `MAX_ATTEMPTS = 100`; repair prefers the original moves for the first half of the attempts | Review H1: plain DFS hit a 200k-backtrack cap in ~0.07% of n=100 folds; with restarts, 0 failures in 3000 (n=100), 300 (n=200), 100 (n=400) runs; ~0.6 ms per n=100 fold |
 | D9 | 2026-11-24 | `evaluate(sequence, moves, dim, ...)`: `dim` is required; moves are checked against it in both strategies; the sequence must already be uppercase H/P (`parse_sequence` output); the penalty must be finite and ≥ 0 | Review M2/L2/L3: inferring dim from U/D letters would silently confine 3D repair to a plane |
 | D10 | 2026-11-24 | Benchmarks: Thachuk et al. 2007 Table 1 is the primary transcription source, cross-checked against Shmygelska & Hoos 2005; all `energy_kind = best_known` | Both papers agree on all 21 E*; the 2005 S1-6 and S2-1 notations fail their own length checks (51/47) |
+| D11 | 2026-11-24 | Quality targets: `make lint` = ruff, `make sec` = Bandit, `make cov` fails under 90% on `src/hpfold`, `make audit` = pip-audit of `uv export`; the dev group includes the tooling deps | Review M1/M6: fresh-clone `make test` must work; lint and security scans are separate concerns |
+| D12 | 2026-11-24 | Fold plots: `plot_fold` requires an already-normalized sequence (no silent lowercase handling); 3D uses an equal box aspect; `save_fold` requires a file suffix and creates parent directories | Review M3/L3/L4 |
 | D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
@@ -193,6 +197,7 @@ Open details to decide during implementation (to be logged here): penalty λ def
 ---
 
 ## Changelog
+- 2026-11-24 — T1.9 fold plot + T1.1 Makefile: review round 1 (6 MEDIUM) → fixed test-first → round 2 APPROVE. 159 tests. **Phase 1 complete.**
 - 2026-11-24 — T1.8 benchmarks: 21 instances generated by script, cited and cross-checked; harness run 22 RED re-demonstrated with user approval (sequencing slip); review APPROVE; golden pins added. 142 tests.
 - 2026-11-24 — Review round 1 (WARNING: H1, M1–M3, L1–L5) → fixes test-first (new tests observed RED → GREEN) → round 2 APPROVE. 114 tests, 99% coverage, Bandit clean. Mutants (D-frame, U-frame, R=L) now caught.
 - 2026-11-24 — Phase 1 unit 1: 5 test files written → observed RED (harness) → Gate 1 approved → hp_model/folds/fitness implemented → 76 tests pass, coverage 98% (core), Bandit clean → code review requested.

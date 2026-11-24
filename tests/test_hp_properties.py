@@ -28,16 +28,16 @@ any_moves = st.one_of(moves_2d, moves_3d)
 def brute_energy(seq, coords):
     e = 0
     for i, j in itertools.combinations(range(len(seq)), 2):
-        if j > i + 1 and seq[i] == seq[j] == "H":
-            if sum(abs(a - b) for a, b in zip(coords[i], coords[j])) == 1:
-                e -= 1
+        adjacent = sum(abs(a - b) for a, b in zip(coords[i], coords[j])) == 1
+        if j > i + 1 and seq[i] == seq[j] == "H" and adjacent:
+            e -= 1
     return e
 
 
 @given(any_moves)
 def test_bonds_have_unit_length(moves):
     coords = decode(moves)
-    for a, b in zip(coords, coords[1:]):
+    for a, b in itertools.pairwise(coords):
         assert sum(abs(p - q) for p, q in zip(a, b)) == 1
 
 

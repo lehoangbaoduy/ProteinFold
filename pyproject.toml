@@ -12,6 +12,11 @@ tools = ["scipy>=1.13", "pandas>=2.2", "matplotlib>=3.9"]
 
 [dependency-groups]
 dev = [
+    # tooling deps are needed by the test suite, so a fresh `uv sync && make test` works
+    "scipy>=1.13",
+    "pandas>=2.2",
+    "matplotlib>=3.9",
+    "ruff>=0.6",
     "pytest>=8",
     "pytest-cov>=5",
     "hypothesis>=6.100",
