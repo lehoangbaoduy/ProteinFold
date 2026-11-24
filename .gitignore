@@ -1,0 +1,20 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Node / web
+node_modules/
+web/dist/
+
+# OS / editor
+*:Zone.Identifier
+.DS_Store
+.vscode/
