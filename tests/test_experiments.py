@@ -1,6 +1,7 @@
 """Experiment runner tests (PRD FR-E1..E5; plan T3.1; spec PFOLD-DATA-002)."""
 
 import csv
+import itertools
 import json
 
 import pytest
@@ -241,3 +242,43 @@ def test_cli_rejects_non_positive_workers(tmp_path):
 def test_repository_configs_are_valid(config):
     cfg = ex.load_config(ex.ROOT / "configs" / config)
     assert cfg.variants and cfg.instances
+
+
+# ---------------------------------------------------------------- history thinning ----
+
+def test_thin_history_keeps_change_points_first_and_last():
+    full = [[0, None], [100, -5], [200, -5], [300, -6], [400, -6], [500, -6]]
+    assert ex.thin_history(full) == [[0, None], [100, -5], [300, -6], [500, -6]]
+    assert ex.thin_history([[0, None]]) == [[0, None]]
+    assert ex.thin_history([[0, None], [7, None]]) == [[0, None], [7, None]]
+    assert ex.thin_history([]) == []
+
+
+def test_history_file_stores_only_change_points(tmp_path):
+    out = tmp_path / "results"
+    ex.run_experiment(ex.load_config(write(tmp_path)), out, workers=1)
+    for line in (out / "tiny.history.jsonl").read_text().splitlines():
+        points = json.loads(line)["history"]
+        interior = [e for _, e in points[1:-1]]
+        assert all(a != b for a, b in itertools.pairwise(interior))
+        assert points == ex.thin_history(points)
+
+
+def _step_value(points, evals):
+    """Best-so-far at `evals` from a step-function history (value holds until the next point)."""
+    import bisect
+
+    index = bisect.bisect_right([p[0] for p in points], evals) - 1
+    return points[index][1]
+
+
+@pytest.mark.parametrize("algorithm", ["GA", "ACO", "PSO"])
+@pytest.mark.parametrize("dim", [2, 3])
+def test_thinning_is_lossless_for_step_lookups(algorithm, dim):
+    from hpfold.algorithms import ALGORITHMS
+
+    full = [list(p) for p in ALGORITHMS[algorithm].run("HPHPPHHPHPPHPHHPPHPH", dim, seed=3, budget=2500).history]
+    thin = ex.thin_history(full)
+    assert len(thin) <= len(full)
+    for evals in range(full[-1][0] + 50):
+        assert _step_value(full, evals) == _step_value(thin, evals)

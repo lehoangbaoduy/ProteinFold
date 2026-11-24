@@ -1,0 +1,204 @@
+{
+  "config": {
+    "budget_c": 10,
+    "budget_min": 10000,
+    "dim": 2,
+    "instances": [
+      "S1-4",
+      "S1-5",
+      "S1-7"
+    ],
+    "name": "penalty_repair",
+    "seeds": 30,
+    "stop_at_best_known": true,
+    "variants": [
+      {
+        "algorithm": "GA",
+        "label": "GA-penalty1",
+        "params": {
+          "penalty": 1.0,
+          "strategy": "penalty"
+        }
+      },
+      {
+        "algorithm": "GA",
+        "label": "GA-penalty2",
+        "params": {
+          "penalty": 2.0,
+          "strategy": "penalty"
+        }
+      },
+      {
+        "algorithm": "GA",
+        "label": "GA-penalty5",
+        "params": {
+          "penalty": 5.0,
+          "strategy": "penalty"
+        }
+      },
+      {
+        "algorithm": "GA",
+        "label": "GA-repair",
+        "params": {
+          "strategy": "repair"
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO-penalty1",
+        "params": {
+          "penalty": 1.0,
+          "strategy": "penalty"
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO-penalty2",
+        "params": {
+          "penalty": 2.0,
+          "strategy": "penalty"
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO-penalty5",
+        "params": {
+          "penalty": 5.0,
+          "strategy": "penalty"
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO-repair",
+        "params": {
+          "strategy": "repair"
+        }
+      }
+    ]
+  },
+  "config_hash": "26441325c504",
+  "finished_at": "2026-11-24T23:42:32.292489+00:00",
+  "git_commit": "3466993",
+  "sessions": [
+    {
+      "finished_at": "2026-11-24T23:42:32.292489+00:00",
+      "git_commit": "3466993",
+      "started_at": "2026-11-24T23:33:00.363497+00:00"
+    }
+  ],
+  "started_at": "2026-11-24T23:33:00.363497+00:00",
+  "variants": {
+    "GA-penalty1": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 1.0,
+        "pm": null,
+        "pop_size": 100,
+        "strategy": "penalty",
+        "tournament_k": 5
+      },
+      "params_hash": "011eaac736cb"
+    },
+    "GA-penalty2": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 2.0,
+        "pm": null,
+        "pop_size": 100,
+        "strategy": "penalty",
+        "tournament_k": 5
+      },
+      "params_hash": "b4a202f46055"
+    },
+    "GA-penalty5": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 5.0,
+        "pm": null,
+        "pop_size": 100,
+        "strategy": "penalty",
+        "tournament_k": 5
+      },
+      "params_hash": "e7a455c7dbd5"
+    },
+    "GA-repair": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 2.0,
+        "pm": null,
+        "pop_size": 100,
+        "strategy": "repair",
+        "tournament_k": 5
+      },
+      "params_hash": "c7e07574f5b4"
+    },
+    "PSO-penalty1": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 0.5,
+        "c2": 0.5,
+        "epsilon": 0.03,
+        "penalty": 1.0,
+        "strategy": "penalty",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.9
+      },
+      "params_hash": "4eded4bd7d9d"
+    },
+    "PSO-penalty2": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 0.5,
+        "c2": 0.5,
+        "epsilon": 0.03,
+        "penalty": 2.0,
+        "strategy": "penalty",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.9
+      },
+      "params_hash": "96114801ed9d"
+    },
+    "PSO-penalty5": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 0.5,
+        "c2": 0.5,
+        "epsilon": 0.03,
+        "penalty": 5.0,
+        "strategy": "penalty",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.9
+      },
+      "params_hash": "515c14c35a15"
+    },
+    "PSO-repair": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 0.5,
+        "c2": 0.5,
+        "epsilon": 0.03,
+        "penalty": 2.0,
+        "strategy": "repair",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.9
+      },
+      "params_hash": "680ec120075f"
+    }
+  }
+}

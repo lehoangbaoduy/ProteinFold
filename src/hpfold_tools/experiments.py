@@ -46,7 +46,8 @@ import math
 import numbers
 import os
 import re
-import subprocess  # nosec B404 - only used for a fixed `git` invocation
+import shutil
+import subprocess  # nosec B404
 import tomllib
 from collections.abc import Iterator, Mapping
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -249,6 +250,22 @@ def plan_jobs(cfg: ExperimentConfig, benchmarks: Mapping[str, Mapping[str, Any]]
     return jobs
 
 
+def thin_history(points: list[list[object]]) -> list[list[object]]:
+    """Keep the first point, every point where the best energy changes, and the last point.
+
+    The convergence curve is a step function, so this loses nothing (and shrinks the
+    file roughly tenfold: the GA, for example, records one point per generation).
+    """
+    if len(points) <= 2:
+        return [list(p) for p in points]
+    kept = [list(points[0])]
+    for point in points[1:-1]:
+        if point[1] != kept[-1][1]:
+            kept.append(list(point))
+    kept.append(list(points[-1]))
+    return kept
+
+
 def _blank(value: object) -> object:
     return "" if value is None else value
 
@@ -268,7 +285,7 @@ def run_job(job: Job) -> tuple[dict[str, Any], dict[str, Any]]:
         "params_hash": job.params_hash,
     }
     history = {"variant": job.variant, "seq_id": job.seq_id, "seed": job.seed,
-               "history": [list(point) for point in result.history]}
+               "history": thin_history([list(point) for point in result.history])}
     return row, history
 
 
@@ -319,13 +336,20 @@ def _check_consistent(existing: Mapping[tuple[str, str, int], Mapping[str, str]]
                              "written; use a new experiment name or output directory")
 
 
+def _git(*args: str) -> str:
+    """Run git with a fixed argument list (absolute executable path, no shell, no user input)."""
+    git = shutil.which("git")
+    if git is None:
+        raise OSError("git not found")
+    done = subprocess.run([git, *args], cwd=ROOT, capture_output=True, text=True, check=True)  # nosec B603
+    return done.stdout.strip()
+
+
 def _git_commit() -> str:
     """Short HEAD hash, '-dirty' if tracked sources differ (result files are ignored)."""
     try:
-        head = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True,  # nosec B603 B607
-                              text=True, check=True).stdout.strip()
-        dirty = subprocess.run(["git", "status", "--porcelain", "--", ".", ":!results"], cwd=ROOT,  # nosec B603 B607
-                               capture_output=True, text=True, check=True).stdout.strip()
+        head = _git("rev-parse", "--short", "HEAD")
+        dirty = _git("status", "--porcelain", "--", ".", ":!results")
     except (OSError, subprocess.CalledProcessError):
         return "unknown"
     return f"{head}-dirty" if dirty else head

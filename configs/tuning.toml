@@ -1,0 +1,104 @@
+# T3.3 / PRD §7.3 — parameter tuning with EQUAL effort per algorithm:
+# 6 configurations x 2 tuning sequences x 10 seeds for each of GA, ACO, PSO.
+# Tuning sequences S1-2 and S1-6 are held out from the pilot (S1-1) and from the
+# penalty-vs-repair experiment (S1-4, S1-5, S1-7); all tuning-touched instances
+# are flagged in the paper. GA and PSO use repair (decision D24); ACO builds
+# valid folds by construction. Budget = the main study's (c = 20).
+name = "tuning"
+dim = 2
+instances = ["S1-2", "S1-6"]
+seeds = 10
+seed_offset = 1000  # seeds disjoint from the main study (0-29)
+budget_c = 20
+budget_min = 10000
+stop_at_best_known = true
+
+[[variants]]
+label = "GA-p50-k3"
+algorithm = "GA"
+params = { strategy = "repair", pop_size = 50, tournament_k = 3 }
+
+[[variants]]
+label = "GA-p50-k5"
+algorithm = "GA"
+params = { strategy = "repair", pop_size = 50, tournament_k = 5 }
+
+[[variants]]
+label = "GA-p100-k3"
+algorithm = "GA"
+params = { strategy = "repair", pop_size = 100, tournament_k = 3 }
+
+[[variants]]
+label = "GA-p100-k5"
+algorithm = "GA"
+params = { strategy = "repair", pop_size = 100, tournament_k = 5 }
+
+[[variants]]
+label = "GA-p200-k3"
+algorithm = "GA"
+params = { strategy = "repair", pop_size = 200, tournament_k = 3 }
+
+[[variants]]
+label = "GA-p200-k5"
+algorithm = "GA"
+params = { strategy = "repair", pop_size = 200, tournament_k = 5 }
+
+[[variants]]
+label = "ACO-rho002-b2"
+algorithm = "ACO"
+params = { rho = 0.02, beta = 2.0 }
+
+[[variants]]
+label = "ACO-rho002-b3"
+algorithm = "ACO"
+params = { rho = 0.02, beta = 3.0 }
+
+[[variants]]
+label = "ACO-rho005-b2"
+algorithm = "ACO"
+params = { rho = 0.05, beta = 2.0 }
+
+[[variants]]
+label = "ACO-rho005-b3"
+algorithm = "ACO"
+params = { rho = 0.05, beta = 3.0 }
+
+[[variants]]
+label = "ACO-rho010-b2"
+algorithm = "ACO"
+params = { rho = 0.1, beta = 2.0 }
+
+[[variants]]
+label = "ACO-rho010-b3"
+algorithm = "ACO"
+params = { rho = 0.1, beta = 3.0 }
+
+[[variants]]
+label = "PSO-w09c05-e001"
+algorithm = "PSO"
+params = { strategy = "repair", w = 0.9, c1 = 0.5, c2 = 0.5, epsilon = 0.01 }
+
+[[variants]]
+label = "PSO-w09c05-e003"
+algorithm = "PSO"
+params = { strategy = "repair", w = 0.9, c1 = 0.5, c2 = 0.5, epsilon = 0.03 }
+
+[[variants]]
+label = "PSO-w09c05-e005"
+algorithm = "PSO"
+params = { strategy = "repair", w = 0.9, c1 = 0.5, c2 = 0.5, epsilon = 0.05 }
+
+[[variants]]
+label = "PSO-w07c10-e001"
+algorithm = "PSO"
+params = { strategy = "repair", w = 0.7, c1 = 1.0, c2 = 1.0, epsilon = 0.01 }
+
+[[variants]]
+label = "PSO-w07c10-e003"
+algorithm = "PSO"
+params = { strategy = "repair", w = 0.7, c1 = 1.0, c2 = 1.0, epsilon = 0.03 }
+
+[[variants]]
+label = "PSO-w07c10-e005"
+algorithm = "PSO"
+params = { strategy = "repair", w = 0.7, c1 = 1.0, c2 = 1.0, epsilon = 0.05 }

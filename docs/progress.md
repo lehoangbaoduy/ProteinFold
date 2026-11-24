@@ -14,7 +14,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 |---|---|
 | **Phase** | 1 ☑ · 2 ☑ (exit criteria met; T2.7 hybrid is a Could) → next: Phase 3 — Experiments |
 | **Last update** | 2026-11-24 |
-| **Next action** | Phase 3, T3.1: experiment runner (TOML configs, process pool, resume, CSV schema FR-E3, B(n) = c·n²). |
+| **Next action** | Phase 3, T3.3: run `configs/tuning.toml` (equal effort: 6 configs × 2 held-out sequences × 10 seeds per algorithm), pick tuned params, then write `configs/main_2d.toml` / `configs/ext_3d.toml` and launch the main study. |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
@@ -80,7 +80,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 | ID | Task | Files | Tests | Status |
 |---|---|---|---|---|
 | T3.1 | Experiment runner: TOML configs, process pool, resume (skip finished rows), CSV schema FR-E3, budget B(n) = c·n², config + git hash recorded | `src/hpfold_tools/experiments.py`, `configs/*.toml` | `tests/test_experiments.py`: schema; resume skips/extends; truncated-line repair; config-change refusal; worker-count determinism; strict keys | ☑ review (2 HIGH) fixed (`3466993`) |
-| T3.2 | Penalty vs. repair mini-experiment (§7.4) → choose a strategy | `configs/penalty_repair.toml`, `results/penalty_repair.csv` | — | ☐ |
+| T3.2 | Penalty vs. repair mini-experiment (§7.4) → choose a strategy | `configs/penalty_repair.toml`, `results/penalty_repair.csv` | 720 runs | ☑ repair wins for GA and PSO on all 3 sequences (D24) |
 | T3.3 | Tuning with equal effort per algorithm (§7.3) → `results/tuned_params.json` | `configs/tuning.toml` | — | ☐ |
 | T3.4 | Main 2D study: 30 seeds × 3 algorithms × all 2D benchmarks | `configs/main_2d.toml`, `results/runs.csv` | row-count check | ☐ |
 | T3.5 | 3D extension: 30 seeds × 3 algorithms × 3D subset | `configs/ext_3d.toml` | row-count check | ☐ |
@@ -202,6 +202,9 @@ Design decisions, especially where the PRD left details open.
 | D21 | 2026-11-24 | Pyodide spike (Node 24, Pyodide 0.28.3 = Python 3.13.2 + numpy 2.2.5): 1.6–2.9× slower than native; load ≈ 1.4 s; ACO n = 100 ≈ 1.2k evals/s (slowest), GA/PSO ≈ 3.6–4.1k. Results bit-identical to native (12/12 cases, same seed). Web effort presets: budget = max(5000, c·n²) with c = 2 (Quick), 5 (Standard), 12 (Thorough); length cap 100 kept | Meets PRD targets (n = 20 Standard < 5 s; n = 100 Thorough ≤ ~100 s for ACO, the slowest); parity looks achievable without special handling |
 | D22 | 2026-11-24 | Experiment runner: TOML configs with [[variants]]; B(n) = max(min, ceil(c·n²)); shared seeds; process pool, rows in completion order; safe resume (trim cut-off last line, error on corrupt rows, history re-sync, config-hash refusal; seeds/instances may grow); strict keys | Review PFOLD-DATA-002 (H1, H2, M1–M4) |
 | D23 | 2026-11-24 | Statistics: rank-sum p-values by permutation (exact if ≤ 20 000 arrangements, else seeded Monte Carlo); report `p_holm_global` (Holm across all sequence×pair tests) in the paper, `p_holm` per sequence as secondary; A₁₂ for minimization with NA ranked worst; Friedman on per-sequence medians for the overall ranking | Review PFOLD-DOM-006: asymptotic p was 0.067 vs exact 0.167 under heavy ties |
+| D24 | 2026-11-24 | Constraint handling for the main study: **repair** for GA and PSO (ACO needs none) | Penalty-vs-repair (720 runs; S1-4/5/7; 30 seeds; c = 10): repair beats every penalty λ for both algorithms on every sequence (A₁₂ of penalty vs repair 0.00–0.09, global-Holm p ≈ 0.008 = permutation floor). Mean gap to E*: GA-repair 3.9, PSO-repair 5.6 vs 7.2–14.2 for penalties; λ = 5 > 2 > 1. Repair costs ~3× wall-clock per evaluation (reported) |
+| D25 | 2026-11-24 | Main-study budget: B(n) = max(10 000, 20·n²) (c = 20) | No variant reached E* at c = 10 for n = 36–60. On S1-7 (n = 60) all three algorithms plateau: 36k → 200k evaluations improves the best by only 1–2 (GA/ACO −32 → −33, PSO −29 → −30 vs E* −36). More budget alone will not reach E* on long chains — a limitation to report; local search (hybrid, T2.7) is the remedy |
+| D26 | 2026-11-24 | History JSONL stores only change points (+ first/last); consumers MUST treat it as a right-continuous step function (look up with bisect_right − 1, never interpolate) | Lossless (verified for every evaluation count), 50× smaller (5.0 MB → 100 KB for 720 runs) |
 | D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
@@ -210,6 +213,7 @@ Open details to decide during implementation (to be logged here): penalty λ def
 ---
 
 ## Changelog
+- 2026-11-24 — T3.2 penalty vs repair done → repair (D24); budget c = 20 (D25); history thinning (D26). Tuning config written.
 - 2026-11-24 — T3.1 experiment runner (`3466993`) and T4.1 statistics (permutation p-values, global Holm, Friedman) reviewed and fixed. Penalty-vs-repair experiment (T3.2) finished.
 - 2026-11-24 — T2.6 Pyodide spike: ~2× slowdown, bit-identical results to native; effort presets set (D21). **Phase 2 complete.**
 - 2026-11-24 — Phase 2 unit 3 (PSO, `b19f7f0`): tests → RED → implemented → pilot defaults → review APPROVE → mutant-killing tests; GA got the same pilot sweep (k = 5). 371 tests. **All three algorithms done.**
