@@ -139,3 +139,8 @@ def test_default_mutation_rate_is_two_per_child():
 def test_crossover_probability_extremes_run(pc):
     r = ga.run(S1_1, 2, params=ga.Params(pc=pc), seed=0, budget=1000)
     assert r.evaluations == 1000 and r.best_energy is not None
+
+
+def test_provisional_defaults_from_pilot_sweep():
+    # Decision D19: same 7-config x 4-seed pilot on S1-1 as ACO/PSO (D16) picked k = 5.
+    assert ga.Params().tournament_k == 5

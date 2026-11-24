@@ -35,7 +35,13 @@ from dataclasses import asdict, dataclass
 
 import numpy as np
 
-from hpfold.algorithms.base import ProgressFn, RunContext, RunResult, StopFn, frequency_matrix
+from hpfold.algorithms.base import (
+    ProgressFn,
+    RunContext,
+    RunResult,
+    StopFn,
+    frequency_matrix,
+)
 from hpfold.folds import random_valid_fold
 from hpfold.hp_model import (
     INITIAL_HEADING,
@@ -73,7 +79,7 @@ class Params:
         for name in ("n_ants", "backtrack_limit", "max_restarts"):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, numbers.Integral):
-                raise ValueError(f"{name} must be an integer")
+                raise ValueError(f"{name} must be an integer")  # noqa: TRY004 - contract: invalid params -> ValueError
         for name in ("alpha", "beta", "rho", "gamma", "tau0", "tau_min", "tau_max"):
             if not math.isfinite(getattr(self, name)):
                 raise ValueError(f"{name} must be finite")

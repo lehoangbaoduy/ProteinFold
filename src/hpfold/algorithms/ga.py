@@ -38,7 +38,7 @@ class Params:
     crossover: str = "two_point"
     pc: float = 0.9
     pm: float | None = None
-    tournament_k: int = 3
+    tournament_k: int = 5  # pilot sweep on S1-1 (decision D19); final tuning in T3.3
     elite: int = 2
     strategy: str = "penalty"
     penalty: float = DEFAULT_PENALTY
