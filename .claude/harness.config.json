@@ -1,7 +1,8 @@
 {
   "specPrefix": "PFOLD",
   "gatedGlobs": [
-    "**/*.py"
+    "**/*.py",
+    "web/src/**/*.ts"
   ],
   "exemptGlobs": [
     "**/*.md",
@@ -10,14 +11,22 @@
   ],
   "testGlobs": [
     "**/test_*.py",
-    "**/*_test.py"
+    "**/*_test.py",
+    "web/**/*.test.ts",
+    "web/tests/**/*.spec.ts"
   ],
   "testCommands": [
     {
       "globs": [
         "**/*.py"
       ],
-      "command": "pytest"
+      "command": "uv run pytest"
+    },
+    {
+      "globs": [
+        "web/**/*.ts"
+      ],
+      "command": "npm --prefix web test"
     }
   ]
 }
