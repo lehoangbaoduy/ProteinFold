@@ -26,7 +26,7 @@ def run(name, sequence, dim=2, budget=2000, **kw):
 # ---------------------------------------------------------------- registry ----
 
 def test_registry_contains_required_algorithms():
-    assert {"GA"} <= set(ALGORITHMS)
+    assert {"GA", "ACO"} <= set(ALGORITHMS)
 
 
 @pytest.mark.parametrize("name", NAMES)

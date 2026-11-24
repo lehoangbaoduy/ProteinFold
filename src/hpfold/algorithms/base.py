@@ -243,8 +243,14 @@ class RunContext:
             self.cancelled = True
         return self.cancelled
 
-    def record(self, current_best_moves: str, matrix: np.ndarray) -> None:
-        """Close one iteration: append to the history and emit a progress frame."""
+    def record(self, current_best_moves: str, matrix: np.ndarray,
+               diversity_matrix: np.ndarray | None = None) -> None:
+        """Close one iteration: append to the history and emit a progress frame.
+
+        `matrix` is the algorithm's internals view (shown on the web page);
+        diversity is computed from `diversity_matrix` when given (e.g. the realized
+        move frequencies of a colony), so all algorithms report comparable diversity.
+        """
         ev = self.evaluator
         self._history.append((ev.evaluations, ev.best_energy))
         self._iteration += 1
@@ -257,7 +263,7 @@ class RunContext:
             best_energy=ev.best_energy,
             best_moves=ev.best_moves,
             current_best_moves=current_best_moves,
-            diversity=normalized_entropy(matrix),
+            diversity=normalized_entropy(matrix if diversity_matrix is None else diversity_matrix),
             matrix=tuple(tuple(float(v) for v in row) for row in matrix),
         ))
 
