@@ -12,9 +12,9 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | | |
 |---|---|
-| **Phase** | 1 — Core ☑ (exit criteria met) → next: Phase 2 — Algorithms |
+| **Phase** | 1 ☑ · 2 ☑ (exit criteria met; T2.7 hybrid is a Could) → next: Phase 3 — Experiments |
 | **Last update** | 2026-11-24 |
-| **Next action** | Phase 2, T2.6: Pyodide timing spike (run GA/ACO/PSO in Pyodide at n = 20, 48, 100; set web effort presets and length cap). |
+| **Next action** | Phase 3, T3.1: experiment runner (TOML configs, process pool, resume, CSV schema FR-E3, B(n) = c·n²). |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
@@ -69,8 +69,10 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 | T2.3 | ACO (§5.3): τ[i][m], heuristic η from new H–H contacts, bounded backtracking + restart, evaporation, deposit rule, optional MMAS bounds; one evaluation per completed fold | `src/hpfold/algorithms/aco.py` | `tests/test_aco.py`: always valid folds; eval count == completed ants; τ stays within bounds; backtrack + restart paths; heuristic bias; colony diversity + contract | ☑ review APPROVE + fixes (`c73146a`) |
 | T2.4 | PSO (§5.3): probability matrices, w/c₁/c₂ update, row renormalization, floor ε, sampling, penalty or repair | `src/hpfold/algorithms/pso.py` | `tests/test_pso.py`: rows sum to 1; min ≥ ε; no one-hot collapse; exact update; ring indices; r1/r2 independence; diversity source + contract | ☑ review APPROVE + mutant-killing tests (`b19f7f0`) |
 | T2.5 | Frame `matrix` + `diversity` per algorithm (FR-T1) | the three algorithm files | frame schema test | ☑ (contract `test_progress_frames`, D17) |
-| T2.6 | Pyodide timing spike: run GA/ACO/PSO in Pyodide (Node or browser) at n = 20, 48, 100; set effort multipliers and the length cap | `web/spike/` (throwaway), results → Decisions log | timings recorded | ☐ |
+| T2.6 | Pyodide timing spike: run GA/ACO/PSO in Pyodide (Node or browser) at n = 20, 48, 100; set effort multipliers and the length cap | throwaway scripts (session scratchpad), results → D21 | timings recorded; native-vs-Pyodide parity checked | ☑ |
 | T2.7 | *(Could)* Pull-move local search + hybrid ACO-LS; LS evaluations count toward the budget | `src/hpfold/local_search.py`, `src/hpfold/algorithms/hybrid.py` | `tests/test_local_search.py`: moves keep validity; energy never worsens | ☐ |
+
+**Phase 2 exit check (2026-11-24):** GA, ACO and PSO each reach ≤ −7 (2D) / ≤ −8 (3D) on the 20-mer and E* = −9 in the pilot ☑ · seeds reproduce ☑ · exact budget ☑ · cancel + frames ☑ · Pyodide parity in the spike ☑
 
 ## Phase 3 — Experiments (PRD §10 row 3)
 **Exit criteria:** `results/runs.csv` complete; tuned defaults exported.
@@ -197,6 +199,7 @@ Design decisions, especially where the PRD left details open.
 | D18 | 2026-11-24 | Native throughput at n = 100 (2D, penalty): GA ~8k, PSO ~7.6k, ACO ~1.5k evals/s; repair is 4–20× slower | Equal-evaluation comparison; report wall-clock alongside evaluations in the paper |
 | D19 | 2026-11-24 | PSO provisional defaults: swarm 30, w 0.9, c1 = c2 = 0.5, ε 0.03, global topology; GA provisional tournament k = 5. All three algorithms received the same pilot (7 configs × 4 seeds × 20k evals on S1-1): GA mean −8.75, ACO −9, PSO −8.5 | Textbook PSO defaults stagnated at −6; the reviewer flagged unequal tuning, so the GA got the identical pilot. S1-1 is the pilot instance: flag it in the paper; T3.3 tunes on held-out sequences with equal effort |
 | D20 | 2026-11-24 | Accepted test gap: which particle's matrix is shown in a PSO frame (the swarm-best owner) is not pinned by a test | Would require exposing swarm internals; behaviour is verified by review |
+| D21 | 2026-11-24 | Pyodide spike (Node 24, Pyodide 0.28.3 = Python 3.13.2 + numpy 2.2.5): 1.6–2.9× slower than native; load ≈ 1.4 s; ACO n = 100 ≈ 1.2k evals/s (slowest), GA/PSO ≈ 3.6–4.1k. Results bit-identical to native (12/12 cases, same seed). Web effort presets: budget = max(5000, c·n²) with c = 2 (Quick), 5 (Standard), 12 (Thorough); length cap 100 kept | Meets PRD targets (n = 20 Standard < 5 s; n = 100 Thorough ≤ ~100 s for ACO, the slowest); parity looks achievable without special handling |
 | D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
@@ -205,6 +208,7 @@ Open details to decide during implementation (to be logged here): penalty λ def
 ---
 
 ## Changelog
+- 2026-11-24 — T2.6 Pyodide spike: ~2× slowdown, bit-identical results to native; effort presets set (D21). **Phase 2 complete.**
 - 2026-11-24 — Phase 2 unit 3 (PSO, `b19f7f0`): tests → RED → implemented → pilot defaults → review APPROVE → mutant-killing tests; GA got the same pilot sweep (k = 5). 371 tests. **All three algorithms done.**
 - 2026-11-24 — Phase 2 unit 2 (ACO, `c73146a`): defaults fixed after stagnation (pilot sweep) → review APPROVE with 3 MEDIUM → fixed test-first. (Progress entry added late: the original update was skipped when `make lint` failed in the same script.)
 - 2026-11-24 — Phase 2 unit 1 (interface + GA): contract + GA tests → RED → implemented → review APPROVE with 4 MEDIUM → fixed test-first → 232 tests, 98% coverage.
