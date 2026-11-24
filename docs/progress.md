@@ -79,7 +79,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | ID | Task | Files | Tests | Status |
 |---|---|---|---|---|
-| T3.1 | Experiment runner: TOML configs, process pool, resume (skip finished rows), CSV schema FR-E3, budget B(n) = c·n², config + git hash recorded | `src/hpfold_tools/experiments.py`, `configs/*.toml` | `tests/test_experiments.py`: schema; resume skips; same seed + config gives an identical row | ☐ |
+| T3.1 | Experiment runner: TOML configs, process pool, resume (skip finished rows), CSV schema FR-E3, budget B(n) = c·n², config + git hash recorded | `src/hpfold_tools/experiments.py`, `configs/*.toml` | `tests/test_experiments.py`: schema; resume skips/extends; truncated-line repair; config-change refusal; worker-count determinism; strict keys | ☑ review (2 HIGH) fixed (`3466993`) |
 | T3.2 | Penalty vs. repair mini-experiment (§7.4) → choose a strategy | `configs/penalty_repair.toml`, `results/penalty_repair.csv` | — | ☐ |
 | T3.3 | Tuning with equal effort per algorithm (§7.3) → `results/tuned_params.json` | `configs/tuning.toml` | — | ☐ |
 | T3.4 | Main 2D study: 30 seeds × 3 algorithms × all 2D benchmarks | `configs/main_2d.toml`, `results/runs.csv` | row-count check | ☐ |
@@ -91,7 +91,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | ID | Task | Files | Tests | Status |
 |---|---|---|---|---|
-| T4.1 | Statistics: summary (FR-A1), Wilcoxon rank-sum + Holm, A₁₂, optional Friedman | `src/hpfold_tools/analysis.py` | `tests/test_analysis.py`: hand-computed A₁₂, Holm ordering, success rate, evals-to-best on successes only, NA handling | ☐ |
+| T4.1 | Statistics: summary (FR-A1), Wilcoxon rank-sum + Holm, A₁₂, optional Friedman | `src/hpfold_tools/analysis.py` | `tests/test_analysis.py`: hand-computed A₁₂, Holm (per sequence + global), exact-permutation p-values, success rate, evals-to-best on successes only, NA handling, Friedman | ☑ review (1 HIGH: asymptotic p under ties) fixed |
 | T4.2 | Figures: convergence (median + IQR), box/violin, best folds 2D/3D | `src/hpfold_tools/figures.py`, `results/figures/` | smoke tests | ☐ |
 | T4.3 | LaTeX tables (booktabs) from the CSV | `src/hpfold_tools/tables.py`, `paper/tables/` | snapshot test on a tiny CSV | ☐ |
 | T4.4 | Sensitivity study (§7.3) | `configs/sensitivity.toml`, `results/sensitivity.csv`, figure | — | ☐ |
@@ -150,11 +150,11 @@ Every row is a required task.
 | E4 | n > 100 on the web | Rejected with an explanation (CLI has no cap) | web input test; `tests/test_algorithm_contract.py::test_no_cap_in_library` | ☐ |
 | E5 | No H / single H | E = 0; runs normally; the page notes it | `tests/test_algorithm_contract.py::test_no_contacts_possible_runs_normally`; Playwright | ◐ library ☑; web pending |
 | E6 | All-H sequence | Valid stress test | `tests/test_algorithm_contract.py::test_all_h_stress` | ☑ |
-| E7 | Never finds a valid fold (penalty) | best_energy = NA; counted as a failure; page says "no valid fold found" | `tests/test_algorithm_contract.py::test_no_valid_fold_is_na`; `tests/test_analysis.py::test_na_is_failure`; Playwright | ☐ |
+| E7 | Never finds a valid fold (penalty) | best_energy = NA; counted as a failure; page says "no valid fold found" | `tests/test_algorithm_contract.py::test_zero_budget_gives_na_not_zero`; `tests/test_experiments.py::test_na_rows_are_written_as_empty_not_zero`; `tests/test_analysis.py::test_summary_counts_na_as_failure_and_excludes_it_from_energy_stats`, `test_na_ranks_below_an_energy_of_zero`; Playwright | ◐ library + analysis ☑; web pending |
 | E8 | ACO ant dead end | Bounded backtracking → restart; restarts logged | `tests/test_aco.py::test_dead_ends_trigger_counted_restarts_and_stay_valid`, `test_backtracking_path_without_restarts`, `test_fallback_after_max_restarts_is_valid_and_flagged` | ☑ |
 | E9 | PSO one-hot collapse | Prevented by ε; diversity logged | `tests/test_pso.py::test_floor_prevents_collapse` | ☑ |
 | E10 | Fitness ties | Deterministic (stable sort) | `tests/test_algorithm_contract.py::test_same_seed_same_result_different_seed_differs` | ☑ |
-| E11 | Disputed best-known / 3D lower bound | Both stored and cited; success uses the better value; flagged | `tests/test_benchmarks.py`; `tests/test_analysis.py::test_success_uses_best_value` | ◐ data side ☑ (no E* disputes found; sequence disputes recorded per instance); analysis side pending |
+| E11 | Disputed best-known / 3D lower bound | Both stored and cited; success uses the better value; flagged | `tests/test_benchmarks.py`; `tests/test_analysis.py::test_success_uses_best_known_inclusive` | ◐ data + analysis ☑ (no E* disputes exist in the two sources; success = best_energy ≤ best_known, where a disputed value would be stored as the better one); web flag pending |
 | E12 | Target reached early | Stop; evals_to_best recorded; page shows "reached best-known" | `tests/test_algorithm_contract.py::test_target_early_stop`; Playwright | ☐ |
 | E13 | Cancel / tab closed mid-run | Workers terminated; partial best shown | `tests/test_algorithm_contract.py::test_cancel`; Playwright | ☐ |
 | E14 | Pyodide fails to load | Clear error; paper-results tab still works | `web/tests/e2e/pyodide_fail.spec.ts` | ☐ |
@@ -200,6 +200,8 @@ Design decisions, especially where the PRD left details open.
 | D19 | 2026-11-24 | PSO provisional defaults: swarm 30, w 0.9, c1 = c2 = 0.5, ε 0.03, global topology; GA provisional tournament k = 5. All three algorithms received the same pilot (7 configs × 4 seeds × 20k evals on S1-1): GA mean −8.75, ACO −9, PSO −8.5 | Textbook PSO defaults stagnated at −6; the reviewer flagged unequal tuning, so the GA got the identical pilot. S1-1 is the pilot instance: flag it in the paper; T3.3 tunes on held-out sequences with equal effort |
 | D20 | 2026-11-24 | Accepted test gap: which particle's matrix is shown in a PSO frame (the swarm-best owner) is not pinned by a test | Would require exposing swarm internals; behaviour is verified by review |
 | D21 | 2026-11-24 | Pyodide spike (Node 24, Pyodide 0.28.3 = Python 3.13.2 + numpy 2.2.5): 1.6–2.9× slower than native; load ≈ 1.4 s; ACO n = 100 ≈ 1.2k evals/s (slowest), GA/PSO ≈ 3.6–4.1k. Results bit-identical to native (12/12 cases, same seed). Web effort presets: budget = max(5000, c·n²) with c = 2 (Quick), 5 (Standard), 12 (Thorough); length cap 100 kept | Meets PRD targets (n = 20 Standard < 5 s; n = 100 Thorough ≤ ~100 s for ACO, the slowest); parity looks achievable without special handling |
+| D22 | 2026-11-24 | Experiment runner: TOML configs with [[variants]]; B(n) = max(min, ceil(c·n²)); shared seeds; process pool, rows in completion order; safe resume (trim cut-off last line, error on corrupt rows, history re-sync, config-hash refusal; seeds/instances may grow); strict keys | Review PFOLD-DATA-002 (H1, H2, M1–M4) |
+| D23 | 2026-11-24 | Statistics: rank-sum p-values by permutation (exact if ≤ 20 000 arrangements, else seeded Monte Carlo); report `p_holm_global` (Holm across all sequence×pair tests) in the paper, `p_holm` per sequence as secondary; A₁₂ for minimization with NA ranked worst; Friedman on per-sequence medians for the overall ranking | Review PFOLD-DOM-006: asymptotic p was 0.067 vs exact 0.167 under heavy ties |
 | D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
@@ -208,6 +210,7 @@ Open details to decide during implementation (to be logged here): penalty λ def
 ---
 
 ## Changelog
+- 2026-11-24 — T3.1 experiment runner (`3466993`) and T4.1 statistics (permutation p-values, global Holm, Friedman) reviewed and fixed. Penalty-vs-repair experiment (T3.2) finished.
 - 2026-11-24 — T2.6 Pyodide spike: ~2× slowdown, bit-identical results to native; effort presets set (D21). **Phase 2 complete.**
 - 2026-11-24 — Phase 2 unit 3 (PSO, `b19f7f0`): tests → RED → implemented → pilot defaults → review APPROVE → mutant-killing tests; GA got the same pilot sweep (k = 5). 371 tests. **All three algorithms done.**
 - 2026-11-24 — Phase 2 unit 2 (ACO, `c73146a`): defaults fixed after stagnation (pilot sweep) → review APPROVE with 3 MEDIUM → fixed test-first. (Progress entry added late: the original update was skipped when `make lint` failed in the same script.)
