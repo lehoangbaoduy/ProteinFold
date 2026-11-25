@@ -1,4 +1,4 @@
-.PHONY: test cov lint sec audit check figures tables web-data
+.PHONY: test cov lint sec audit check figures tables web-data web-runtime
 
 # Core package (src/hpfold) must stay >= 90% covered (PRD §6); the suite is the gate.
 COV_MIN := 90
@@ -34,3 +34,8 @@ tables:
 # Static JSON for the web page (PRD FR-E6, FR-T1/T2): defaults, benchmarks, summaries, replay traces.
 web-data:
 	uv run python -m hpfold_tools.export_web --config configs/main_2d.toml --config configs/ext_3d.toml
+
+# Self-hosted Pyodide + numpy wheel (sha256-checked) + hpfold.zip into web/public/ (T5.2).
+# WHEEL_DIR=<dir> uses a local numpy wheel instead of downloading it.
+web-runtime:
+	uv run python -m hpfold_tools.web_runtime $(if $(WHEEL_DIR),--wheel-dir $(WHEEL_DIR))

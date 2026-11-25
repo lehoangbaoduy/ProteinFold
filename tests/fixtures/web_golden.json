@@ -1,0 +1,57 @@
+[
+ {
+  "job": {
+   "algorithm": "GA",
+   "sequence": "HPHPPHHPHPPHPHHPPHPH",
+   "dim": 2,
+   "seed": 11,
+   "budget": 4000,
+   "params": {
+    "pop_size": 100,
+    "tournament_k": 3,
+    "strategy": "repair"
+   }
+  },
+  "best_energy": -9,
+  "best_moves": "LFLLRRLFLLRLRRLLFL",
+  "evaluations": 4000,
+  "source": "Pyodide 0.28.3 / numpy 2.2.5 run (scratch e2e), equal to native numpy"
+ },
+ {
+  "job": {
+   "algorithm": "ACO",
+   "sequence": "HPHPPHHPHPPHPHHPPHPH",
+   "dim": 3,
+   "seed": 5,
+   "budget": 3000,
+   "params": {
+    "rho": 0.1,
+    "beta": 3.0
+   }
+  },
+  "best_energy": -11,
+  "best_moves": "RDRRFFRDDRRDFRDDFD",
+  "evaluations": 3000,
+  "source": "Pyodide 0.28.3 / numpy 2.2.5 run (scratch e2e), equal to native numpy"
+ },
+ {
+  "job": {
+   "algorithm": "PSO",
+   "sequence": "HHPPHPPHPPHPPHPPHPPHPPHH",
+   "dim": 2,
+   "seed": 2147483647,
+   "budget": 3000,
+   "params": {
+    "w": 0.7,
+    "c1": 1.0,
+    "c2": 1.0,
+    "epsilon": 0.05,
+    "strategy": "repair"
+   }
+  },
+  "best_energy": -7,
+  "best_moves": "FLLFRFRLLRLLRLLRFFFLFF",
+  "evaluations": 3000,
+  "source": "Pyodide 0.28.3 / numpy 2.2.5 run (scratch e2e), equal to native numpy"
+ }
+]
