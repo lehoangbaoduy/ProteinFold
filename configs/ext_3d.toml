@@ -1,0 +1,25 @@
+# T3.5 / PRD §7.2 — 3D extension: five 3D benchmarks (48-mers) x GA/ACO/PSO x 30 seeds,
+# same budget rule and the same tuned parameters as the 2D study (tuning was done
+# in 2D only; stated as a limitation in the paper).
+name = "ext_3d"
+dim = 3
+instances = ["S2-1", "S2-2", "S2-3", "S2-4", "S2-5"]
+seeds = 30
+budget_c = 20
+budget_min = 10000
+stop_at_best_known = true
+
+[[variants]]
+label = "GA"
+algorithm = "GA"
+params = { strategy = "repair", pop_size = 100, tournament_k = 3 }
+
+[[variants]]
+label = "ACO"
+algorithm = "ACO"
+params = { rho = 0.1, beta = 3.0 }
+
+[[variants]]
+label = "PSO"
+algorithm = "PSO"
+params = { strategy = "repair", w = 0.7, c1 = 1.0, c2 = 1.0, epsilon = 0.05 }

@@ -1,4 +1,4 @@
-.PHONY: test cov lint sec audit check
+.PHONY: test cov lint sec audit check figures
 
 # Core package (src/hpfold) must stay >= 90% covered (PRD §6); the suite is the gate.
 COV_MIN := 90
@@ -22,3 +22,7 @@ audit:
 	uv export --no-emit-project --quiet | uv run pip-audit -r /dev/stdin
 
 check: test lint sec audit
+
+# Paper figures for every experiment CSV in results/ (PRD FR-A3..A5).
+figures:
+	for f in results/*.csv; do [ -e "$$f" ] || continue; uv run python -m hpfold_tools.figures "$$f" || exit 1; done

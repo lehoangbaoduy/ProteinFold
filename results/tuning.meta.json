@@ -1,0 +1,468 @@
+{
+  "config": {
+    "budget_c": 20,
+    "budget_min": 10000,
+    "dim": 2,
+    "instances": [
+      "S1-2",
+      "S1-6"
+    ],
+    "name": "tuning",
+    "seed_offset": 1000,
+    "seeds": 10,
+    "stop_at_best_known": true,
+    "variants": [
+      {
+        "algorithm": "GA",
+        "label": "GA-p50-k3",
+        "params": {
+          "pop_size": 50,
+          "strategy": "repair",
+          "tournament_k": 3
+        }
+      },
+      {
+        "algorithm": "GA",
+        "label": "GA-p50-k5",
+        "params": {
+          "pop_size": 50,
+          "strategy": "repair",
+          "tournament_k": 5
+        }
+      },
+      {
+        "algorithm": "GA",
+        "label": "GA-p100-k3",
+        "params": {
+          "pop_size": 100,
+          "strategy": "repair",
+          "tournament_k": 3
+        }
+      },
+      {
+        "algorithm": "GA",
+        "label": "GA-p100-k5",
+        "params": {
+          "pop_size": 100,
+          "strategy": "repair",
+          "tournament_k": 5
+        }
+      },
+      {
+        "algorithm": "GA",
+        "label": "GA-p200-k3",
+        "params": {
+          "pop_size": 200,
+          "strategy": "repair",
+          "tournament_k": 3
+        }
+      },
+      {
+        "algorithm": "GA",
+        "label": "GA-p200-k5",
+        "params": {
+          "pop_size": 200,
+          "strategy": "repair",
+          "tournament_k": 5
+        }
+      },
+      {
+        "algorithm": "ACO",
+        "label": "ACO-rho002-b2",
+        "params": {
+          "beta": 2.0,
+          "rho": 0.02
+        }
+      },
+      {
+        "algorithm": "ACO",
+        "label": "ACO-rho002-b3",
+        "params": {
+          "beta": 3.0,
+          "rho": 0.02
+        }
+      },
+      {
+        "algorithm": "ACO",
+        "label": "ACO-rho005-b2",
+        "params": {
+          "beta": 2.0,
+          "rho": 0.05
+        }
+      },
+      {
+        "algorithm": "ACO",
+        "label": "ACO-rho005-b3",
+        "params": {
+          "beta": 3.0,
+          "rho": 0.05
+        }
+      },
+      {
+        "algorithm": "ACO",
+        "label": "ACO-rho010-b2",
+        "params": {
+          "beta": 2.0,
+          "rho": 0.1
+        }
+      },
+      {
+        "algorithm": "ACO",
+        "label": "ACO-rho010-b3",
+        "params": {
+          "beta": 3.0,
+          "rho": 0.1
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO-w09c05-e001",
+        "params": {
+          "c1": 0.5,
+          "c2": 0.5,
+          "epsilon": 0.01,
+          "strategy": "repair",
+          "w": 0.9
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO-w09c05-e003",
+        "params": {
+          "c1": 0.5,
+          "c2": 0.5,
+          "epsilon": 0.03,
+          "strategy": "repair",
+          "w": 0.9
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO-w09c05-e005",
+        "params": {
+          "c1": 0.5,
+          "c2": 0.5,
+          "epsilon": 0.05,
+          "strategy": "repair",
+          "w": 0.9
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO-w07c10-e001",
+        "params": {
+          "c1": 1.0,
+          "c2": 1.0,
+          "epsilon": 0.01,
+          "strategy": "repair",
+          "w": 0.7
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO-w07c10-e003",
+        "params": {
+          "c1": 1.0,
+          "c2": 1.0,
+          "epsilon": 0.03,
+          "strategy": "repair",
+          "w": 0.7
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO-w07c10-e005",
+        "params": {
+          "c1": 1.0,
+          "c2": 1.0,
+          "epsilon": 0.05,
+          "strategy": "repair",
+          "w": 0.7
+        }
+      }
+    ]
+  },
+  "config_hash": "b6a0219bf2d4",
+  "finished_at": "2026-11-24T23:59:15.957295+00:00",
+  "git_commit": "b58470c",
+  "sessions": [
+    {
+      "finished_at": "2026-11-24T23:59:15.957295+00:00",
+      "git_commit": "b58470c",
+      "started_at": "2026-11-24T23:50:43.850662+00:00"
+    }
+  ],
+  "started_at": "2026-11-24T23:50:43.850662+00:00",
+  "variants": {
+    "ACO-rho002-b2": {
+      "algorithm": "ACO",
+      "params": {
+        "alpha": 1.0,
+        "backtrack_limit": 50,
+        "beta": 2.0,
+        "deposit": "both",
+        "gamma": 1.0,
+        "max_restarts": 20,
+        "n_ants": 30,
+        "rho": 0.02,
+        "tau0": 1.0,
+        "tau_max": 2.0,
+        "tau_min": 0.1
+      },
+      "params_hash": "9755b53046ae"
+    },
+    "ACO-rho002-b3": {
+      "algorithm": "ACO",
+      "params": {
+        "alpha": 1.0,
+        "backtrack_limit": 50,
+        "beta": 3.0,
+        "deposit": "both",
+        "gamma": 1.0,
+        "max_restarts": 20,
+        "n_ants": 30,
+        "rho": 0.02,
+        "tau0": 1.0,
+        "tau_max": 2.0,
+        "tau_min": 0.1
+      },
+      "params_hash": "43f3695fa129"
+    },
+    "ACO-rho005-b2": {
+      "algorithm": "ACO",
+      "params": {
+        "alpha": 1.0,
+        "backtrack_limit": 50,
+        "beta": 2.0,
+        "deposit": "both",
+        "gamma": 1.0,
+        "max_restarts": 20,
+        "n_ants": 30,
+        "rho": 0.05,
+        "tau0": 1.0,
+        "tau_max": 2.0,
+        "tau_min": 0.1
+      },
+      "params_hash": "6cb69b12da78"
+    },
+    "ACO-rho005-b3": {
+      "algorithm": "ACO",
+      "params": {
+        "alpha": 1.0,
+        "backtrack_limit": 50,
+        "beta": 3.0,
+        "deposit": "both",
+        "gamma": 1.0,
+        "max_restarts": 20,
+        "n_ants": 30,
+        "rho": 0.05,
+        "tau0": 1.0,
+        "tau_max": 2.0,
+        "tau_min": 0.1
+      },
+      "params_hash": "c4acd57594e2"
+    },
+    "ACO-rho010-b2": {
+      "algorithm": "ACO",
+      "params": {
+        "alpha": 1.0,
+        "backtrack_limit": 50,
+        "beta": 2.0,
+        "deposit": "both",
+        "gamma": 1.0,
+        "max_restarts": 20,
+        "n_ants": 30,
+        "rho": 0.1,
+        "tau0": 1.0,
+        "tau_max": 2.0,
+        "tau_min": 0.1
+      },
+      "params_hash": "251479daabb1"
+    },
+    "ACO-rho010-b3": {
+      "algorithm": "ACO",
+      "params": {
+        "alpha": 1.0,
+        "backtrack_limit": 50,
+        "beta": 3.0,
+        "deposit": "both",
+        "gamma": 1.0,
+        "max_restarts": 20,
+        "n_ants": 30,
+        "rho": 0.1,
+        "tau0": 1.0,
+        "tau_max": 2.0,
+        "tau_min": 0.1
+      },
+      "params_hash": "8d3e00fed558"
+    },
+    "GA-p100-k3": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 2.0,
+        "pm": null,
+        "pop_size": 100,
+        "strategy": "repair",
+        "tournament_k": 3
+      },
+      "params_hash": "7980a7e90381"
+    },
+    "GA-p100-k5": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 2.0,
+        "pm": null,
+        "pop_size": 100,
+        "strategy": "repair",
+        "tournament_k": 5
+      },
+      "params_hash": "c7e07574f5b4"
+    },
+    "GA-p200-k3": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 2.0,
+        "pm": null,
+        "pop_size": 200,
+        "strategy": "repair",
+        "tournament_k": 3
+      },
+      "params_hash": "0fb8af64217d"
+    },
+    "GA-p200-k5": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 2.0,
+        "pm": null,
+        "pop_size": 200,
+        "strategy": "repair",
+        "tournament_k": 5
+      },
+      "params_hash": "bec4965e8f21"
+    },
+    "GA-p50-k3": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 2.0,
+        "pm": null,
+        "pop_size": 50,
+        "strategy": "repair",
+        "tournament_k": 3
+      },
+      "params_hash": "1db0dda32573"
+    },
+    "GA-p50-k5": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 2.0,
+        "pm": null,
+        "pop_size": 50,
+        "strategy": "repair",
+        "tournament_k": 5
+      },
+      "params_hash": "0c94b1a78224"
+    },
+    "PSO-w07c10-e001": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 1.0,
+        "c2": 1.0,
+        "epsilon": 0.01,
+        "penalty": 2.0,
+        "strategy": "repair",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.7
+      },
+      "params_hash": "6652ade61f65"
+    },
+    "PSO-w07c10-e003": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 1.0,
+        "c2": 1.0,
+        "epsilon": 0.03,
+        "penalty": 2.0,
+        "strategy": "repair",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.7
+      },
+      "params_hash": "ddf9e830b26f"
+    },
+    "PSO-w07c10-e005": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 1.0,
+        "c2": 1.0,
+        "epsilon": 0.05,
+        "penalty": 2.0,
+        "strategy": "repair",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.7
+      },
+      "params_hash": "9dae88a62f7e"
+    },
+    "PSO-w09c05-e001": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 0.5,
+        "c2": 0.5,
+        "epsilon": 0.01,
+        "penalty": 2.0,
+        "strategy": "repair",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.9
+      },
+      "params_hash": "da8e3fbb062a"
+    },
+    "PSO-w09c05-e003": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 0.5,
+        "c2": 0.5,
+        "epsilon": 0.03,
+        "penalty": 2.0,
+        "strategy": "repair",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.9
+      },
+      "params_hash": "680ec120075f"
+    },
+    "PSO-w09c05-e005": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 0.5,
+        "c2": 0.5,
+        "epsilon": 0.05,
+        "penalty": 2.0,
+        "strategy": "repair",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.9
+      },
+      "params_hash": "692d42ec84ae"
+    }
+  }
+}
