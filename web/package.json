@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "pyodide": "0.28.3",
-    "three": "^0.180.0"
+    "three": "^0.187.0"
   },
   "allowScripts": {
     "esbuild@0.28.2": true
