@@ -12,7 +12,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | | |
 |---|---|
-| **Phase** | 1 ☑ · 2 ☑ · 3 ◐ (runner ☑, penalty/repair ☑, tuning ☑, main 2D + 3D running) · 4 ◐ (stats ☑, figures ☑, tables ☑; sensitivity + animation pending) · 5 ◐ (web export ☑ `4d16bc2`; scaffold + input in review) |
+| **Phase** | 1 ☑ · 2 ☑ · 3 ◐ (runner ☑, penalty/repair ☑, tuning ☑, main 2D + 3D running) · 4 ◐ (stats ☑, figures ☑, tables ☑; sensitivity pending; animation dropped (D30)) · 5 ◐ (web export ☑ `4d16bc2`; scaffold + input in review) |
 | **Last update** | 2026-11-24 |
 | **Next action** | (1) Finish review of harness run 33 (web scaffold + input + share codec) → commit. (2) `main_2d` still running in the background (284/990 at 19:56; resumable). (3) Next web units: Pyodide worker + wheel/self-hosted Pyodide (T5.2/T5.3), live views (T5.6/T5.7), paper-results tab (T5.10), about (T5.11), Playwright checks (T5.12–T5.14). (4) After main_2d: commit results, `make figures tables web-data`. |
 
@@ -95,7 +95,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 | T4.2 | Figures: convergence (median + IQR), box/violin, best folds 2D/3D | `src/hpfold_tools/figures.py`, `results/figures/`, `make figures` | `tests/test_figures.py`: step lookup, masked IQR bands, NA reporting, 3D folds, legend/tick layout | ☑ review fixed; visually inspected |
 | T4.3 | LaTeX tables (booktabs) from the CSV | `src/hpfold_tools/tables.py`, `paper/tables/`, `make tables` | `tests/test_tables.py`: structure, column counts, bold-best, k/n success, NA, escaping, CLI | ☑ (`a024af3`) |
 | T4.4 | Sensitivity study (§7.3) | `configs/sensitivity.toml`, `results/sensitivity.csv`, figure | — | ☐ |
-| T4.5 | Talk animation (GIF/MP4) | `src/hpfold_tools/animate.py`, `results/figures/anim_*.gif` | smoke test | ☐ |
+| T4.5 | ~~Talk animation (GIF/MP4)~~ | — | — | ✗ dropped by the user (D30): the talk is given in person |
 
 ## Phase 5 — Webpage (PRD §10 row 5)
 **Exit criteria:** §14 webpage criteria met; offline demo verified; all checks done with Playwright screenshots.
@@ -208,6 +208,7 @@ Design decisions, especially where the PRD left details open.
 | D27 | 2026-11-24 | Tuned parameters (equal effort; 6 configs × 2 held-out sequences × 10 seeds per algorithm; selection = lowest mean relative gap to E*, tie-break success rate): GA pop 100, k 3, repair (gap 0.065, success 35%); ACO ρ 0.1, β 3 (0.071, 40%); PSO w 0.7, c1 = c2 = 1.0, ε 0.05, repair (0.148, 15%). Library defaults stay provisional; configs carry the tuned values; web defaults exported from them (FR-E6) | ACO's best ρ is at the grid edge (0.1 = largest tried): note in the paper. PSO top-2 tied on gap and success; the faster won |
 | D28 | 2026-11-24 | Figures: convergence median/IQR drawn only where every run has a valid fold (no survivorship bias); NA counts shown as text; legend below the panels; ticks in thousands | Review PFOLD-DOM-007 |
 | D29 | 2026-11-25 | Web traces: best and lower-median run per (variant, sequence) re-run deterministically; pre-flight (experiment, variants, params hash, budget) + exact reproduction of energy, fold, evaluations, evals-to-best, target; frames thinned (always first, last improvement, last; ≤ 300; < 2 MB); runtime dropped so exports are byte-reproducible; experiments.json index | Review PFOLD-DATA-003 |
+| D30 | 2026-11-24 | T4.5 / FR-A6 talk animation (GIF/MP4) dropped | User: "I don't think I need animation for the talk, I will do it in person, you don't need to create mp4 or gif for that". The live webpage already animates the search; the separate demo fallback video (T6.3) is a different item and is unaffected unless the user drops it too |
 | D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
