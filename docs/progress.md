@@ -102,15 +102,15 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | ID | Task | Files | Tests / verification | Status |
 |---|---|---|---|---|
-| T5.1 | Scaffold: Vite + TS, ESLint (+ security plugin), vitest, Playwright, CSP meta compatible with WASM | `web/package.json`, `web/vite.config.ts`, `web/tsconfig.json`, `web/eslint.config.js` | `npm --prefix web test`, `npm --prefix web run lint`, `tsc --noEmit` | ◐ in review (harness run 33) |
-| T5.2 | Package hpfold as a wheel for Pyodide; self-host Pyodide | `scripts/build_web_wheel.py`, `web/public/py/`, `web/public/pyodide/` | worker loads offline | ☐ |
-| T5.3 | Solver worker: run jobs, post frames, cancel, error reporting | `web/src/worker/solver.worker.ts`, `web/src/worker/protocol.ts` | vitest on the protocol; Playwright run | ☐ |
-| T5.4 | Input + validation (FR-L1): normalize, H/P only, 3–100, presets, random | `web/src/solver/input.ts` | vitest + fast-check fuzzing of the parser (no throw, never accepts invalid input) | ◐ GREEN, in review |
+| T5.1 | Scaffold: Vite + TS, ESLint (+ security plugin), vitest, Playwright, CSP meta compatible with WASM | `web/package.json`, `web/vite.config.ts`, `web/tsconfig.json`, `web/eslint.config.js` | `npm --prefix web test`, `npm --prefix web run lint`, `tsc --noEmit` | ☑ review (run 33) fixed (`5a6a9f3`) |
+| T5.2 | Package hpfold as a wheel for Pyodide; self-host Pyodide | `scripts/build_web_wheel.py`, `web/public/py/`, `web/public/pyodide/` | worker loads offline | ☑ `make web-runtime`, review (run 34) fixed (`e696d85`) |
+| T5.3 | Solver worker: run jobs, post frames, cancel, error reporting | `web/src/worker/solver.worker.ts`, `web/src/worker/protocol.ts` | vitest on the protocol; Playwright run | ◐ Python side ☑ `hpfold.webjob` (`e696d85`); TS worker + pool next |
+| T5.4 | Input + validation (FR-L1): normalize, H/P only, 3–100, presets, random | `web/src/solver/input.ts` | vitest + fast-check fuzzing of the parser (no throw, never accepts invalid input) | ☑ (`5a6a9f3`) |
 | T5.5 | Options (FR-L2): lattice, algorithms, effort, seed, advanced params from `defaults.json` | `web/src/solver/options.ts` | vitest | ☐ |
 | T5.6 | Live view (FR-L4): 2D fold SVG, convergence chart, internals heatmap, race layout, progress + elapsed time | `web/src/views/fold2d.ts`, `convergence.ts`, `heatmap.ts`, `race.ts` | Playwright screenshots while running | ☐ |
 | T5.7 | Results (FR-L5): 3D fold (three.js), metrics panel, comparison table, benchmark badge + citation | `web/src/views/fold3d.ts`, `metrics.ts`, `compare.ts` | Playwright screenshots | ☐ |
 | T5.8 | Cancel, Pyodide loading state (FR-L7), honesty note (FR-L8), "no valid fold found" state | `web/src/solver/*` | Playwright | ☐ |
-| T5.9 | Export + share URL codec (FR-L6), treating URL input as untrusted | `web/src/share/url.ts` | vitest + fuzzing of the decoder | ◐ GREEN, in review |
+| T5.9 | Export + share URL codec (FR-L6), treating URL input as untrusted | `web/src/share/url.ts` | vitest + fuzzing of the decoder | ◐ share codec ☑ (`5a6a9f3`); PNG/SVG/JSON export pending |
 | T5.10 | Paper results tab: replay + dashboard (FR-W1, W2) | `web/src/results/*` | Playwright | ☐ |
 | T5.11 | About / explainers (FR-X1), including "search, not training" | `web/src/about/*` | Playwright | ☐ |
 | T5.12 | Parity: same (seq, params, seed) gives the same result natively and in Pyodide, checked in a real browser | `web/tests/e2e/parity.spec.ts`, `tests/fixtures/parity.json` | Playwright | ☐ |
@@ -209,6 +209,7 @@ Design decisions, especially where the PRD left details open.
 | D28 | 2026-11-24 | Figures: convergence median/IQR drawn only where every run has a valid fold (no survivorship bias); NA counts shown as text; legend below the panels; ticks in thousands | Review PFOLD-DOM-007 |
 | D29 | 2026-11-25 | Web traces: best and lower-median run per (variant, sequence) re-run deterministically; pre-flight (experiment, variants, params hash, budget) + exact reproduction of energy, fold, evaluations, evals-to-best, target; frames thinned (always first, last improvement, last; ≤ 300; < 2 MB); runtime dropped so exports are byte-reproducible; experiments.json index | Review PFOLD-DATA-003 |
 | D30 | 2026-11-24 | T4.5 / FR-A6 talk animation (GIF/MP4) dropped | User: "I don't think I need animation for the talk, I will do it in person, you don't need to create mp4 or gif for that". The live webpage already animates the search; the separate demo fallback video (T6.3) is a different item and is unaffected unless the user drops it too |
+| D31 | 2026-11-24 | Browser runs: one JSON entry point `hpfold.webjob.run_job_json` (validation in Python, the code under test); cancel = terminate the worker, keeping the last emitted frame (every improvement is emitted, one frame per iteration); population/loop params capped at 1000, budget at 200k; self-hosted Pyodide with numpy sha256 pinned twice (lock + code); golden fixture `tests/fixtures/web_golden.json` checked natively and in Pyodide | No SharedArrayBuffer on static hosting, so Python cannot be interrupted; review run 34 |
 | D5 | 2026-11-24 | Harness config: gatedGlobs `**/*.py` + `web/src/**/*.ts`; test command `uv run pytest` (Python) and `npm --prefix web test` (web) | The generated bare `pytest` resolved to the user-level Python without project dependencies, so tests could never go GREEN; web globs added now to avoid a second reconcile in Phase 5 |
 | D4 | 2026-11-24 | Harness-os spec IDs use the prefix `PFOLD` (`PFOLD-PROD-001`, `PFOLD-DOM-001`, …) | Schema requires `^[A-Z][A-Z0-9]{1,9}-<TYPE>-NNN$` |
 
