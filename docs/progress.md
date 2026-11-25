@@ -12,9 +12,9 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | | |
 |---|---|
-| **Phase** | 1 ☑ · 2 ☑ (exit criteria met; T2.7 hybrid is a Could) → next: Phase 3 — Experiments |
+| **Phase** | 1 ☑ · 2 ☑ · 3 ◐ (runner ☑, penalty/repair ☑, tuning ☑, main 2D + 3D running) · 4 ◐ (stats ☑, figures ☑, tables in review) |
 | **Last update** | 2026-11-24 |
-| **Next action** | Main studies running in the background (`configs/ext_3d.toml`, then `configs/main_2d.toml`); meanwhile T4.3 LaTeX tables, T3.6 web export, Phase 5 webpage. |
+| **Next action** | (1) Finish T4.3 tables review → commit (paper/tables for penalty_repair + tuning only; ext_3d/main_2d tables after their runs). (2) Background run `ext_3d` then `main_2d` (started 2026-11-24 ~19:05 local; resumable: re-run the same command if interrupted). (3) When done: commit results, `make figures tables`, analysis write-up. (4) T3.6 web export → Phase 5 webpage → Phase 6 paper/talk. Remaining Could: T2.7 hybrid (pull-move local search) — strongly motivated by the plateau (D25). |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
