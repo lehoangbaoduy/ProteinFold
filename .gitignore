@@ -18,3 +18,7 @@ web/dist/
 *:Zone.Identifier
 .DS_Store
 .vscode/
+
+# web
+web/node_modules/
+web/dist/

@@ -12,9 +12,9 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | | |
 |---|---|
-| **Phase** | 1 ☑ · 2 ☑ · 3 ◐ (runner ☑, penalty/repair ☑, tuning ☑, main 2D + 3D running) · 4 ◐ (stats ☑, figures ☑, tables ☑; sensitivity + animation pending) |
+| **Phase** | 1 ☑ · 2 ☑ · 3 ◐ (runner ☑, penalty/repair ☑, tuning ☑, main 2D + 3D running) · 4 ◐ (stats ☑, figures ☑, tables ☑; sensitivity + animation pending) · 5 ◐ (web export ☑ `4d16bc2`; scaffold + input in review) |
 | **Last update** | 2026-11-24 |
-| **Next action** | Background: `ext_3d` then `main_2d` running (resumable: re-run `uv run python -m hpfold_tools.experiments configs/<name>.toml --workers 8`). When done: commit results/*, run `make figures tables`, write up findings. Meanwhile: T3.6 web export → Phase 5 webpage; T4.4 sensitivity and T4.5 animation; Could: T2.7 hybrid. |
+| **Next action** | (1) Finish review of harness run 33 (web scaffold + input + share codec) → commit. (2) `main_2d` still running in the background (284/990 at 19:56; resumable). (3) Next web units: Pyodide worker + wheel/self-hosted Pyodide (T5.2/T5.3), live views (T5.6/T5.7), paper-results tab (T5.10), about (T5.11), Playwright checks (T5.12–T5.14). (4) After main_2d: commit results, `make figures tables web-data`. |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
@@ -102,15 +102,15 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | ID | Task | Files | Tests / verification | Status |
 |---|---|---|---|---|
-| T5.1 | Scaffold: Vite + TS, ESLint (+ security plugin), vitest, Playwright, CSP meta compatible with WASM | `web/package.json`, `web/vite.config.ts`, `web/index.html`, `web/eslint.config.js` | `npm test`, `npm run lint` | ☐ |
+| T5.1 | Scaffold: Vite + TS, ESLint (+ security plugin), vitest, Playwright, CSP meta compatible with WASM | `web/package.json`, `web/vite.config.ts`, `web/tsconfig.json`, `web/eslint.config.js` | `npm --prefix web test`, `npm --prefix web run lint`, `tsc --noEmit` | ◐ in review (harness run 33) |
 | T5.2 | Package hpfold as a wheel for Pyodide; self-host Pyodide | `scripts/build_web_wheel.py`, `web/public/py/`, `web/public/pyodide/` | worker loads offline | ☐ |
 | T5.3 | Solver worker: run jobs, post frames, cancel, error reporting | `web/src/worker/solver.worker.ts`, `web/src/worker/protocol.ts` | vitest on the protocol; Playwright run | ☐ |
-| T5.4 | Input + validation (FR-L1): normalize, H/P only, 3–100, presets, random | `web/src/solver/input.ts` | vitest + fast-check fuzzing of the parser (no throw, never accepts invalid input) | ☐ |
+| T5.4 | Input + validation (FR-L1): normalize, H/P only, 3–100, presets, random | `web/src/solver/input.ts` | vitest + fast-check fuzzing of the parser (no throw, never accepts invalid input) | ◐ GREEN, in review |
 | T5.5 | Options (FR-L2): lattice, algorithms, effort, seed, advanced params from `defaults.json` | `web/src/solver/options.ts` | vitest | ☐ |
 | T5.6 | Live view (FR-L4): 2D fold SVG, convergence chart, internals heatmap, race layout, progress + elapsed time | `web/src/views/fold2d.ts`, `convergence.ts`, `heatmap.ts`, `race.ts` | Playwright screenshots while running | ☐ |
 | T5.7 | Results (FR-L5): 3D fold (three.js), metrics panel, comparison table, benchmark badge + citation | `web/src/views/fold3d.ts`, `metrics.ts`, `compare.ts` | Playwright screenshots | ☐ |
 | T5.8 | Cancel, Pyodide loading state (FR-L7), honesty note (FR-L8), "no valid fold found" state | `web/src/solver/*` | Playwright | ☐ |
-| T5.9 | Export + share URL codec (FR-L6), treating URL input as untrusted | `web/src/share/url.ts` | vitest + fuzzing of the decoder | ☐ |
+| T5.9 | Export + share URL codec (FR-L6), treating URL input as untrusted | `web/src/share/url.ts` | vitest + fuzzing of the decoder | ◐ GREEN, in review |
 | T5.10 | Paper results tab: replay + dashboard (FR-W1, W2) | `web/src/results/*` | Playwright | ☐ |
 | T5.11 | About / explainers (FR-X1), including "search, not training" | `web/src/about/*` | Playwright | ☐ |
 | T5.12 | Parity: same (seq, params, seed) gives the same result natively and in Pyodide, checked in a real browser | `web/tests/e2e/parity.spec.ts`, `tests/fixtures/parity.json` | Playwright | ☐ |
