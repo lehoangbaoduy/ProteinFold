@@ -7,6 +7,9 @@
 // SharedArrayBuffer, which static hosting cannot enable), so cancel terminates every busy
 // worker. hpfold.webjob emits a frame on every improvement, so the last frame received is the
 // job's best fold so far; it is reported with the "cancelled" event. Idle workers survive.
+//
+// Every job ends with exactly one terminal event (done, error or cancelled). The pool updates
+// its own state before emitting any event, so an event handler may call run() or cancel().
 
 import { parseWorkerMessage, type Frame, type JobSpec, type RunResultData, type ToWorker } from "./protocol";
 
@@ -33,13 +36,20 @@ export interface QueuedJob {
 
 export interface PoolOptions {
   size: number;
-  baseUrl: string; // where pyodide/ and py/ are served (the site root)
+  /** Absolute URL of the directory serving pyodide/ and py/ (the site root). */
+  baseUrl: string;
   createWorker: () => WorkerLike;
   onEvent: (event: PoolEvent) => void;
+  /** A worker that is not ready after this long counts as failed to load. */
+  loadTimeoutMs?: number;
 }
 
 export const MAX_POOL_SIZE = 4; // each worker holds its own Pyodide (~100 MB of memory)
+export const DEFAULT_LOAD_TIMEOUT_MS = 180_000; // ~15 MB download on a slow connection
 const CRASH_MESSAGE = "The solver stopped unexpectedly.";
+const START_MESSAGE = "Could not start the solver.";
+const TIMEOUT_MESSAGE = "Loading the Python runtime timed out.";
+const UNREADABLE_MESSAGE = "The solver returned an unreadable result.";
 
 /** min(cores, 4), at least 1; 2 when the browser does not say. */
 export function defaultPoolSize(cores: number | undefined): number {
@@ -52,10 +62,18 @@ interface Slot {
   ready: boolean;
   job: QueuedJob | null;
   lastFrame: Frame | null;
+  loadTimer: ReturnType<typeof setTimeout> | null;
+}
+
+/** A result/error message addressed to `id` (used when its content fails validation). */
+function isTerminalFor(data: unknown, id: string): boolean {
+  if (typeof data !== "object" || data === null) return false;
+  const msg = data as { type?: unknown; id?: unknown };
+  return (msg.type === "result" || msg.type === "error") && msg.id === id;
 }
 
 export class SolverPool {
-  private readonly slots: Slot[] = [];
+  private slots: Slot[] = [];
   private queue: QueuedJob[] = [];
   private readonly active = new Set<string>(); // ids queued or running
   private readonly opts: PoolOptions;
@@ -84,14 +102,20 @@ export class SolverPool {
   }
 
   cancel(): void {
-    for (const slot of [...this.slots]) {
-      if (slot.job === null) continue; // idle or still loading: keep it for the next run
-      this.remove(slot);
-      this.opts.onEvent({ kind: "cancelled", id: slot.job.id, lastFrame: slot.lastFrame });
-    }
-    for (const queued of this.queue) this.opts.onEvent({ kind: "cancelled", id: queued.id, lastFrame: null });
+    const running = this.slots.filter((s) => s.job !== null);
+    const waiting = this.queue;
+    // reset first: a handler of the events below may start new jobs
+    for (const slot of running) this.remove(slot);
     this.queue = [];
     this.active.clear();
+    for (const slot of running) {
+      if (slot.job) this.emit({ kind: "cancelled", id: slot.job.id, lastFrame: slot.lastFrame });
+    }
+    for (const queued of waiting) this.emit({ kind: "cancelled", id: queued.id, lastFrame: null });
+  }
+
+  private emit(event: PoolEvent): void {
+    this.opts.onEvent(event);
   }
 
   /** Start workers until every queued job has one (up to `size`). */
@@ -101,8 +125,11 @@ export class SolverPool {
   }
 
   private spawn(): void {
-    const slot: Slot = { worker: this.opts.createWorker(), ready: false, job: null, lastFrame: null };
+    const slot: Slot = { worker: this.opts.createWorker(), ready: false, job: null, lastFrame: null, loadTimer: null };
     this.slots.push(slot);
+    slot.loadTimer = setTimeout(() => {
+      this.loadFailed(slot, TIMEOUT_MESSAGE);
+    }, this.opts.loadTimeoutMs ?? DEFAULT_LOAD_TIMEOUT_MS);
     slot.worker.onmessage = (ev) => {
       this.onMessage(slot, ev.data);
     };
@@ -113,86 +140,106 @@ export class SolverPool {
   }
 
   private dispatch(): void {
-    for (const slot of this.slots) {
-      if (!slot.ready || slot.job !== null) continue;
+    for (const slot of [...this.slots]) {
+      if (!this.slots.includes(slot) || !slot.ready || slot.job !== null) continue;
       const next = this.queue.shift();
       if (next === undefined) return;
       slot.job = next;
       slot.lastFrame = null;
       slot.worker.postMessage({ type: "run", id: next.id, job: next.job });
-      this.opts.onEvent({ kind: "started", id: next.id });
+      this.emit({ kind: "started", id: next.id });
     }
   }
 
   private remove(slot: Slot): void {
+    if (slot.loadTimer !== null) clearTimeout(slot.loadTimer);
+    slot.loadTimer = null;
     slot.worker.onmessage = null;
     slot.worker.onerror = null;
     slot.worker.terminate();
-    this.slots.splice(this.slots.indexOf(slot), 1);
+    this.slots = this.slots.filter((s) => s !== slot);
   }
 
-  private finish(slot: Slot): void {
+  /** End the slot's current job with `event` (state is cleared first), then continue. */
+  private finish(slot: Slot, event: PoolEvent): void {
     if (slot.job) this.active.delete(slot.job.id);
     slot.job = null;
     slot.lastFrame = null;
+    this.emit(event);
     this.dispatch();
   }
 
   private onMessage(slot: Slot, data: unknown): void {
     if (!this.slots.includes(slot)) return; // late message from a terminated worker
-    const msg = parseWorkerMessage(data);
-    if (msg === null) return;
     const current = slot.job?.id;
+    const msg = parseWorkerMessage(data);
+    if (msg === null) {
+      // a malformed frame is skipped, but a malformed end of the job must still end it
+      if (current !== undefined && isTerminalFor(data, current)) {
+        this.finish(slot, { kind: "error", id: current, message: UNREADABLE_MESSAGE });
+      }
+      return;
+    }
     switch (msg.type) {
       case "loading":
-        this.opts.onEvent({ kind: "loading", stage: msg.stage });
+        this.emit({ kind: "loading", stage: msg.stage });
         return;
       case "ready":
         if (!slot.ready) {
           slot.ready = true;
+          if (slot.loadTimer !== null) clearTimeout(slot.loadTimer);
+          slot.loadTimer = null;
           this.dispatch();
         }
         return;
       case "frame":
         if (msg.id !== current) return;
         slot.lastFrame = msg.frame;
-        this.opts.onEvent({ kind: "frame", id: msg.id, frame: msg.frame });
+        this.emit({ kind: "frame", id: msg.id, frame: msg.frame });
         return;
       case "result":
         if (msg.id !== current) return;
-        this.opts.onEvent({ kind: "done", id: msg.id, result: msg.result });
-        this.finish(slot);
+        this.finish(slot, { kind: "done", id: msg.id, result: msg.result });
         return;
       case "error":
-        if (msg.id === null && current === undefined) {
-          this.failRuntime(slot, msg.message);
-        } else if (current !== undefined && (msg.id === current || msg.id === null)) {
-          this.opts.onEvent({ kind: "error", id: current, message: msg.message });
-          this.finish(slot);
+        if (current === undefined) {
+          if (msg.id === null) this.loadFailed(slot, msg.message);
+        } else if (msg.id === current || msg.id === null) {
+          this.finish(slot, { kind: "error", id: current, message: msg.message });
         }
         return;
     }
   }
 
-  /** The Python runtime failed to load: every waiting job would fail the same way. */
-  private failRuntime(slot: Slot, message: string): void {
+  /**
+   * A worker could not load the runtime (error, crash or timeout before ready). If another
+   * worker is still alive, it takes over the queue; otherwise every waiting job fails with the
+   * message. No replacement is spawned here, so a broken deployment cannot respawn forever;
+   * the next run() tries again.
+   */
+  private loadFailed(slot: Slot, message: string): void {
+    if (!this.slots.includes(slot)) return;
     this.remove(slot);
-    for (const queued of this.queue) {
-      this.active.delete(queued.id);
-      this.opts.onEvent({ kind: "error", id: queued.id, message });
-    }
+    if (this.slots.length > 0) return;
+    const waiting = this.queue;
     this.queue = [];
+    for (const queued of waiting) this.active.delete(queued.id);
+    for (const queued of waiting) this.emit({ kind: "error", id: queued.id, message });
   }
 
   private onCrash(slot: Slot): void {
     if (!this.slots.includes(slot)) return;
+    if (!slot.ready) {
+      this.loadFailed(slot, START_MESSAGE);
+      return;
+    }
     const job = slot.job;
     this.remove(slot);
     if (job) {
       this.active.delete(job.id);
-      this.opts.onEvent({ kind: "error", id: job.id, message: CRASH_MESSAGE });
+      this.emit({ kind: "error", id: job.id, message: CRASH_MESSAGE });
     }
-    this.grow();
+    this.grow(); // a crash consumes its job, so respawning here cannot loop
     this.dispatch();
   }
 }

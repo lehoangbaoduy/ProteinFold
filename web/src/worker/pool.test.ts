@@ -1,6 +1,6 @@
 // SolverPool (PFOLD-DOM-011): runs jobs on at most `size` workers, FIFO queue, cancel by
 // terminating busy workers while keeping each running job's best-so-far frame.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { defaultPoolSize, SolverPool, type PoolEvent, type WorkerLike } from "./pool";
 import type { Frame, JobSpec, RunResultData, ToWorker } from "./protocol";
@@ -57,12 +57,13 @@ const result: RunResultData = {
 const frameMsg = (id: string, f: Frame) => ({ type: "frame", id, json: JSON.stringify({ type: "frame", frame: f }) });
 const resultMsg = (id: string) => ({ type: "result", id, json: JSON.stringify({ type: "result", result }) });
 
-function setup(size: number) {
+function setup(size: number, loadTimeoutMs?: number) {
   const workers: FakeWorker[] = [];
   const events: PoolEvent[] = [];
   const pool = new SolverPool({
     size,
     baseUrl: "https://example.test/app/",
+    ...(loadTimeoutMs === undefined ? {} : { loadTimeoutMs }),
     createWorker: () => {
       const w = new FakeWorker();
       workers.push(w);
@@ -234,5 +235,148 @@ describe("defaultPoolSize", () => {
     [16, 4],
   ])("cores %j -> %i workers", (cores, size) => {
     expect(defaultPoolSize(cores)).toBe(size);
+  });
+});
+
+describe("SolverPool hardening (review run 35)", () => {
+  it("an unreadable result for the running job becomes an error and frees the worker (H1)", () => {
+    const { pool, workers, events } = setup(1);
+    pool.run(jobs("a", "b"));
+    nth(workers, 0).send({ type: "ready" });
+    nth(workers, 0).send({ type: "result", id: "a", json: "{NaN" });
+    expect(events.slice(-2)).toEqual([
+      { kind: "error", id: "a", message: "The solver returned an unreadable result." },
+      { kind: "started", id: "b" },
+    ]);
+    nth(workers, 0).send({ type: "error", id: "b", message: "x".repeat(5000) });
+    expect(events.at(-1)).toEqual({ kind: "error", id: "b", message: "The solver returned an unreadable result." });
+    expect(pool.busy).toBe(false);
+  });
+
+  it("accepts a result with a long history (budget 200,000, one point per iteration)", () => {
+    const { pool, workers, events } = setup(1);
+    pool.run(jobs("a"));
+    nth(workers, 0).send({ type: "ready" });
+    const history: [number, number | null][] = [[0, null]];
+    for (let i = 1; i <= 200_000; i++) history.push([i, -1]);
+    const long = { ...result, evaluations: 200_000, history };
+    nth(workers, 0).send({ type: "result", id: "a", json: JSON.stringify({ type: "result", result: long }) });
+    expect(events.at(-1)?.kind).toBe("done");
+  });
+
+  it("a worker that cannot start fails the queue instead of respawning forever (M1)", () => {
+    const { pool, workers, events } = setup(1);
+    pool.run(jobs("a", "b"));
+    nth(workers, 0).onerror?.(new Event("error"));
+    expect(workers).toHaveLength(1);
+    expect(events).toEqual([
+      { kind: "error", id: "a", message: "Could not start the solver." },
+      { kind: "error", id: "b", message: "Could not start the solver." },
+    ]);
+    expect(pool.busy).toBe(false);
+  });
+
+  it("a runtime that never becomes ready times out (M2)", () => {
+    vi.useFakeTimers();
+    try {
+      const { pool, workers, events } = setup(1, 1000);
+      pool.run(jobs("a"));
+      vi.advanceTimersByTime(999);
+      expect(events).toEqual([]);
+      vi.advanceTimersByTime(1);
+      expect(events).toEqual([{ kind: "error", id: "a", message: "Loading the Python runtime timed out." }]);
+      expect(nth(workers, 0).terminated).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a ready worker clears its load timer", () => {
+    vi.useFakeTimers();
+    try {
+      const { pool, workers, events } = setup(1, 1000);
+      pool.run(jobs("a"));
+      nth(workers, 0).send({ type: "ready" });
+      vi.advanceTimersByTime(5000);
+      expect(events).toEqual([{ kind: "started", id: "a" }]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a load failure on one worker leaves the queue to the healthy worker (M4)", () => {
+    const { pool, workers, events } = setup(2);
+    pool.run(jobs("a", "b", "c"));
+    nth(workers, 0).send({ type: "ready" }); // runs a
+    nth(workers, 1).send({ type: "error", id: null, message: "fetch failed" });
+    expect(events).toEqual([{ kind: "started", id: "a" }]);
+    nth(workers, 0).send(resultMsg("a"));
+    expect(events.at(-1)).toEqual({ kind: "started", id: "b" });
+  });
+
+  it("run() called from a cancelled handler is not wiped (M3)", () => {
+    const workers: FakeWorker[] = [];
+    const events: PoolEvent[] = [];
+    let restarted = false;
+    const pool: SolverPool = new SolverPool({
+      size: 1,
+      baseUrl: "https://example.test/",
+      createWorker: () => {
+        const w = new FakeWorker();
+        workers.push(w);
+        return w;
+      },
+      onEvent: (e) => {
+        events.push(e);
+        if (e.kind === "cancelled" && !restarted) {
+          restarted = true;
+          pool.run(jobs("again"));
+        }
+      },
+    });
+    pool.run(jobs("a", "b"));
+    nth(workers, 0).send({ type: "ready" });
+    pool.cancel();
+    expect(pool.busy).toBe(true);
+    const fresh = workers.at(-1);
+    fresh?.send({ type: "ready" });
+    expect(events.at(-1)).toEqual({ kind: "started", id: "again" });
+  });
+
+  it("a job id can be reused from its own done handler (state cleared before the event)", () => {
+    const workers: FakeWorker[] = [];
+    let reran = false;
+    const pool: SolverPool = new SolverPool({
+      size: 1,
+      baseUrl: "https://example.test/",
+      createWorker: () => {
+        const w = new FakeWorker();
+        workers.push(w);
+        return w;
+      },
+      onEvent: (e) => {
+        if (e.kind === "done" && !reran) {
+          reran = true;
+          pool.run(jobs("a"));
+        }
+      },
+    });
+    pool.run(jobs("a"));
+    nth(workers, 0).send({ type: "ready" });
+    expect(() => {
+      nth(workers, 0).send(resultMsg("a"));
+    }).not.toThrow();
+    expect(nth(workers, 0).running).toBe("a");
+    expect(nth(workers, 0).posted.filter((m) => m.type === "run")).toHaveLength(2);
+  });
+
+  it("a loading worker that crashes while another is healthy does not fail the queue", () => {
+    const { pool, workers, events } = setup(2);
+    pool.run(jobs("a", "b"));
+    nth(workers, 0).send({ type: "ready" });
+    nth(workers, 1).onerror?.(new Event("error"));
+    expect(events).toEqual([{ kind: "started", id: "a" }]);
+    nth(workers, 0).send(resultMsg("a"));
+    expect(events.at(-1)).toEqual({ kind: "started", id: "b" });
   });
 });

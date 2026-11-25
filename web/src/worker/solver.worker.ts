@@ -64,13 +64,18 @@ function run(msg: Extract<ToWorker, { type: "run" }>): void {
   }
 }
 
+let initStarted = false;
+
 scope.onmessage = (ev) => {
-  const msg = ev.data as ToWorker;
-  if (msg.type === "init") {
+  const data: unknown = ev.data;
+  if (typeof data !== "object" || data === null) return;
+  const msg = data as Partial<ToWorker>;
+  if (msg.type === "init" && typeof msg.baseUrl === "string" && !initStarted) {
+    initStarted = true; // load the runtime once per worker
     init(msg.baseUrl).catch(() => {
       post({ type: "error", id: null, message: LOAD_ERROR });
     });
-  } else {
-    run(msg);
+  } else if (msg.type === "run" && typeof msg.id === "string" && typeof msg.job === "object") {
+    run(msg as Extract<ToWorker, { type: "run" }>);
   }
 };

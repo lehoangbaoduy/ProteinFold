@@ -127,3 +127,29 @@ describe("errorMessage", () => {
     expect(errorMessage(err)).toBe("The solver failed unexpectedly.");
   });
 });
+
+describe("protocol hardening (review run 35)", () => {
+  it.each([
+    ["ragged matrix", frameMsg({ ...frame, matrix: [[0.5, 0.5, 0], [1, 0]] })],
+    ["empty matrix row", frameMsg({ ...frame, matrix: [[]] })],
+    ["coords not matching the moves", frameMsg({ ...frame, best_coords: frame.best_coords?.slice(0, 3) })],
+    ["contact index beyond the chain", frameMsg({ ...frame, best_contacts: [[0, 99]] })],
+  ])("drops a frame with %s", (_label, msg) => {
+    expect(parseWorkerMessage(msg)).toBeNull();
+  });
+
+  it.each([
+    ["coords not matching the sequence", resultMsg({ ...result, coords: result.coords?.slice(0, 4) })],
+    ["2D fold leaving the plane", resultMsg({ ...result, coords: [[0, 0, 0], [1, 0, 0], [2, 0, 0], [2, 1, 0], [1, 1, 1]] })],
+    ["contact index beyond the chain", resultMsg({ ...result, contacts: [[0, 9]] })],
+  ])("drops a result with %s", (_label, msg) => {
+    expect(parseWorkerMessage(msg)).toBeNull();
+  });
+
+  it("shows only the final exception line, and only if it is a ValueError (M5)", () => {
+    const chained = new Error(
+      "Traceback ...\nValueError: inner detail\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback ...\nTypeError: boom\n",
+    );
+    expect(errorMessage(chained)).toBe("The solver failed unexpectedly.");
+  });
+});

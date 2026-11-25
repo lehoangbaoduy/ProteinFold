@@ -17,9 +17,10 @@ export function runtimeUrls(baseUrl: string, pageOrigin: string): RuntimeUrls {
   } catch {
     throw new Error(NOT_THIS_SITE);
   }
-  if ((base.protocol !== "https:" && base.protocol !== "http:") || base.origin !== pageOrigin) {
+  if ((base.protocol !== "https:" && base.protocol !== "http:") || base.origin !== pageOrigin || base.username || base.password) {
     throw new Error(NOT_THIS_SITE);
   }
+  if (!base.pathname.endsWith("/")) base.pathname += "/"; // the base is a directory
   return {
     pyodideModule: new URL("pyodide/pyodide.mjs", base).href,
     pyodideIndex: new URL("pyodide/", base).href,

@@ -27,3 +27,15 @@ describe("runtimeUrls", () => {
     expect(() => runtimeUrls(base, origin)).toThrow(/this site/);
   });
 });
+
+describe("runtimeUrls (review run 35)", () => {
+  it("treats a base without a trailing slash as a directory", () => {
+    expect(runtimeUrls("https://user.github.io/proteinfold", "https://user.github.io").hpfoldZip).toBe(
+      "https://user.github.io/proteinfold/py/hpfold.zip",
+    );
+  });
+
+  it("refuses a base with credentials", () => {
+    expect(() => runtimeUrls("https://a:b@user.github.io/", "https://user.github.io")).toThrow(/this site/);
+  });
+});

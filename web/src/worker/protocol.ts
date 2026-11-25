@@ -66,7 +66,8 @@ export type WorkerMessage =
   | { type: "error"; id: string | null; message: string };
 
 const MAX_TEXT = 500;
-const MAX_ITEMS = 10_000; // generous: n <= 100 beads, matrix rows <= 98, history <= budget
+const MAX_ITEMS = 10_000; // beads (<= 100), matrix rows (<= 98), contacts
+const MAX_HISTORY = 200_001; // one point per iteration: up to the 200,000 budget, plus (0, null)
 const MOVES = /^[FLRUD]*$/;
 const SEQUENCE = /^[HP]{3,100}$/;
 const ALGORITHMS: readonly string[] = ["GA", "ACO", "PSO"];
@@ -92,6 +93,20 @@ const isParamValue = (v: unknown): v is ParamValue =>
 const isParams = (v: unknown): v is Record<string, ParamValue> =>
   isObj(v) && Object.keys(v).length <= 50 && Object.values(v).every(isParamValue);
 const isHistoryPoint = (v: unknown): boolean => isList(v) && v.length === 2 && isCount(v[0]) && isEnergy(v[1]);
+const isHistory = (v: unknown): boolean => Array.isArray(v) && v.length <= MAX_HISTORY && v.every(isHistoryPoint);
+
+/** Rows all of one alphabet's width (3 moves in 2D, 5 in 3D), each a probability vector. */
+function isMatrix(v: unknown): boolean {
+  if (!isList(v)) return false;
+  const width = (v[0] as unknown[] | undefined)?.length;
+  return (width === 3 || width === 5 || v.length === 0) && v.every((row) => isList(row) && row.length === width && row.every(isProb));
+}
+
+/** Coordinates of a fold with `beads` beads (or none) and contacts that index into it. */
+function isGeometry(coords: unknown, contacts: unknown, beads: number | null): boolean {
+  if (beads === null) return coords === null && isPairs(contacts) && contacts.length === 0;
+  return isCoords(coords) && coords !== null && coords.length === beads && isPairs(contacts) && contacts.every(([i, j]) => i < beads && j < beads);
+}
 
 function toFrame(f: unknown): Frame | null {
   if (!isObj(f)) return null;
@@ -103,10 +118,8 @@ function toFrame(f: unknown): Frame | null {
     (f.best_moves === null || isMoves(f.best_moves)) &&
     isMoves(f.current_best_moves) &&
     isProb(f.diversity) &&
-    isList(f.matrix) &&
-    f.matrix.every((row) => isList(row) && row.length <= 5 && row.every(isProb)) &&
-    isCoords(f.best_coords) &&
-    isPairs(f.best_contacts);
+    isMatrix(f.matrix) &&
+    isGeometry(f.best_coords, f.best_contacts, typeof f.best_moves === "string" ? f.best_moves.length + 2 : null);
   if (!ok) return null;
   return {
     iter: f.iter as number,
@@ -138,14 +151,13 @@ function toResult(r: unknown): RunResultData | null {
     (r.evals_to_best === null || isCount(r.evals_to_best)) &&
     isNum(r.runtime_s) &&
     r.runtime_s >= 0 &&
-    isList(r.history) &&
-    r.history.every(isHistoryPoint) &&
+    isHistory(r.history) &&
     typeof r.cancelled === "boolean" &&
     typeof r.target_reached === "boolean" &&
     isObj(r.stats) &&
     Object.values(r.stats).every(isNum) &&
-    isCoords(r.coords) &&
-    isPairs(r.contacts) &&
+    isGeometry(r.coords, r.contacts, r.best_moves === null ? null : r.sequence.length) &&
+    (r.dim === 3 || r.coords === null || (r.coords as Coord[]).every((c) => c[2] === 0)) &&
     typeof r.valid === "boolean" &&
     (r.n_contacts === null || isCount(r.n_contacts));
   if (!ok) return null;
@@ -221,7 +233,9 @@ export function parseWorkerMessage(data: unknown): WorkerMessage | null {
 export function errorMessage(err: unknown): string {
   const text = err instanceof Error ? err.message : isObj(err) ? err.message : undefined;
   if (typeof text !== "string") return GENERIC_ERROR;
-  const matches = [...text.matchAll(/^ValueError: (.+)$/gm)];
-  const last = matches.at(-1)?.[1]?.trim();
-  return last && last.length <= 300 ? last : GENERIC_ERROR;
+  // only the final exception counts (a chained traceback lists earlier ones first)
+  const lastLine = text.trimEnd().split("\n").at(-1) ?? "";
+  const match = /^ValueError: (.+)$/.exec(lastLine);
+  const message = match?.[1]?.trim();
+  return message && message.length <= 300 ? message : GENERIC_ERROR;
 }
