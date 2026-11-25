@@ -107,7 +107,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 | T5.3 | Solver worker: run jobs, post frames, cancel, error reporting | `web/src/worker/solver.worker.ts`, `web/src/worker/protocol.ts` | vitest on the protocol; Playwright run | ◐ Python side ☑ `hpfold.webjob` (`e696d85`); TS worker + pool next |
 | T5.4 | Input + validation (FR-L1): normalize, H/P only, 3–100, presets, random | `web/src/solver/input.ts` | vitest + fast-check fuzzing of the parser (no throw, never accepts invalid input) | ☑ (`5a6a9f3`) |
 | T5.5 | Options (FR-L2): lattice, algorithms, effort, seed, advanced params from `defaults.json` | `web/src/solver/options.ts` | vitest | ☐ |
-| T5.6 | Live view (FR-L4): 2D fold SVG, convergence chart, internals heatmap, race layout, progress + elapsed time | `web/src/views/fold2d.ts`, `convergence.ts`, `heatmap.ts`, `race.ts` | Playwright screenshots while running | ☐ |
+| T5.6 | Live view (FR-L4): 2D fold SVG, convergence chart, internals heatmap, race layout, progress + elapsed time | `web/src/views/fold2d.ts`, `convergence.ts`, `heatmap.ts`, `race.ts` | Playwright screenshots while running | ☐ design via Claude Design from `docs/design-brief.md` (D32) |
 | T5.7 | Results (FR-L5): 3D fold (three.js), metrics panel, comparison table, benchmark badge + citation | `web/src/views/fold3d.ts`, `metrics.ts`, `compare.ts` | Playwright screenshots | ☐ |
 | T5.8 | Cancel, Pyodide loading state (FR-L7), honesty note (FR-L8), "no valid fold found" state | `web/src/solver/*` | Playwright | ☐ |
 | T5.9 | Export + share URL codec (FR-L6), treating URL input as untrusted | `web/src/share/url.ts` | vitest + fuzzing of the decoder | ◐ share codec ☑ (`5a6a9f3`); PNG/SVG/JSON export pending |
