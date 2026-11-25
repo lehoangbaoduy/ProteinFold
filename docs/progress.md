@@ -12,9 +12,9 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 
 | | |
 |---|---|
-| **Phase** | 1 ☑ · 2 ☑ · 3 ◐ (runner ☑, penalty/repair ☑, tuning ☑, main 2D + 3D running) · 4 ◐ (stats ☑, figures ☑, tables in review) |
+| **Phase** | 1 ☑ · 2 ☑ · 3 ◐ (runner ☑, penalty/repair ☑, tuning ☑, main 2D + 3D running) · 4 ◐ (stats ☑, figures ☑, tables ☑; sensitivity + animation pending) |
 | **Last update** | 2026-11-24 |
-| **Next action** | (1) Finish T4.3 tables review → commit (paper/tables for penalty_repair + tuning only; ext_3d/main_2d tables after their runs). (2) Background run `ext_3d` then `main_2d` (started 2026-11-24 ~19:05 local; resumable: re-run the same command if interrupted). (3) When done: commit results, `make figures tables`, analysis write-up. (4) T3.6 web export → Phase 5 webpage → Phase 6 paper/talk. Remaining Could: T2.7 hybrid (pull-move local search) — strongly motivated by the plateau (D25). |
+| **Next action** | Background: `ext_3d` then `main_2d` running (resumable: re-run `uv run python -m hpfold_tools.experiments configs/<name>.toml --workers 8`). When done: commit results/*, run `make figures tables`, write up findings. Meanwhile: T3.6 web export → Phase 5 webpage; T4.4 sensitivity and T4.5 animation; Could: T2.7 hybrid. |
 
 ### Blockers
 | ID | Blocker | Needed from | Since |
@@ -93,7 +93,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 |---|---|---|---|---|
 | T4.1 | Statistics: summary (FR-A1), Wilcoxon rank-sum + Holm, A₁₂, optional Friedman | `src/hpfold_tools/analysis.py` | `tests/test_analysis.py`: hand-computed A₁₂, Holm (per sequence + global), exact-permutation p-values, success rate, evals-to-best on successes only, NA handling, Friedman | ☑ review (1 HIGH: asymptotic p under ties) fixed |
 | T4.2 | Figures: convergence (median + IQR), box/violin, best folds 2D/3D | `src/hpfold_tools/figures.py`, `results/figures/`, `make figures` | `tests/test_figures.py`: step lookup, masked IQR bands, NA reporting, 3D folds, legend/tick layout | ☑ review fixed; visually inspected |
-| T4.3 | LaTeX tables (booktabs) from the CSV | `src/hpfold_tools/tables.py`, `paper/tables/` | snapshot test on a tiny CSV | ☐ |
+| T4.3 | LaTeX tables (booktabs) from the CSV | `src/hpfold_tools/tables.py`, `paper/tables/`, `make tables` | `tests/test_tables.py`: structure, column counts, bold-best, k/n success, NA, escaping, CLI | ☑ (`a024af3`) |
 | T4.4 | Sensitivity study (§7.3) | `configs/sensitivity.toml`, `results/sensitivity.csv`, figure | — | ☐ |
 | T4.5 | Talk animation (GIF/MP4) | `src/hpfold_tools/animate.py`, `results/figures/anim_*.gif` | smoke test | ☐ |
 
@@ -215,6 +215,7 @@ Open details to decide during implementation (to be logged here): penalty λ def
 ---
 
 ## Changelog
+- 2026-11-24 — T4.3 LaTeX tables (`a024af3`): review APPROVE (2 MEDIUM fixed: variant selection, exact k/n success).
 - 2026-11-24 — T3.3 tuning done (D27); T4.2 figures module reviewed + fixed (D28); main 2D and 3D configs written.
 - 2026-11-24 — T3.2 penalty vs repair done → repair (D24); budget c = 20 (D25); history thinning (D26). Tuning config written.
 - 2026-11-24 — T3.1 experiment runner (`3466993`) and T4.1 statistics (permutation p-values, global Holm, Friedman) reviewed and fixed. Penalty-vs-repair experiment (T3.2) finished.
