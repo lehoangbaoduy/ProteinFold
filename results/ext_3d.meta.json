@@ -1,0 +1,105 @@
+{
+  "config": {
+    "budget_c": 20,
+    "budget_min": 10000,
+    "dim": 3,
+    "instances": [
+      "S2-1",
+      "S2-2",
+      "S2-3",
+      "S2-4",
+      "S2-5"
+    ],
+    "name": "ext_3d",
+    "seeds": 30,
+    "stop_at_best_known": true,
+    "variants": [
+      {
+        "algorithm": "GA",
+        "label": "GA",
+        "params": {
+          "pop_size": 100,
+          "strategy": "repair",
+          "tournament_k": 3
+        }
+      },
+      {
+        "algorithm": "ACO",
+        "label": "ACO",
+        "params": {
+          "beta": 3.0,
+          "rho": 0.1
+        }
+      },
+      {
+        "algorithm": "PSO",
+        "label": "PSO",
+        "params": {
+          "c1": 1.0,
+          "c2": 1.0,
+          "epsilon": 0.05,
+          "strategy": "repair",
+          "w": 0.7
+        }
+      }
+    ]
+  },
+  "config_hash": "e7c7d3628d75",
+  "finished_at": "2026-11-25T00:22:38.297849+00:00",
+  "git_commit": "35399d8",
+  "sessions": [
+    {
+      "finished_at": "2026-11-25T00:22:38.297849+00:00",
+      "git_commit": "35399d8",
+      "started_at": "2026-11-25T00:04:48.993221+00:00"
+    }
+  ],
+  "started_at": "2026-11-25T00:04:48.993221+00:00",
+  "variants": {
+    "ACO": {
+      "algorithm": "ACO",
+      "params": {
+        "alpha": 1.0,
+        "backtrack_limit": 50,
+        "beta": 3.0,
+        "deposit": "both",
+        "gamma": 1.0,
+        "max_restarts": 20,
+        "n_ants": 30,
+        "rho": 0.1,
+        "tau0": 1.0,
+        "tau_max": 2.0,
+        "tau_min": 0.1
+      },
+      "params_hash": "8d3e00fed558"
+    },
+    "GA": {
+      "algorithm": "GA",
+      "params": {
+        "crossover": "two_point",
+        "elite": 2,
+        "pc": 0.9,
+        "penalty": 2.0,
+        "pm": null,
+        "pop_size": 100,
+        "strategy": "repair",
+        "tournament_k": 3
+      },
+      "params_hash": "7980a7e90381"
+    },
+    "PSO": {
+      "algorithm": "PSO",
+      "params": {
+        "c1": 1.0,
+        "c2": 1.0,
+        "epsilon": 0.05,
+        "penalty": 2.0,
+        "strategy": "repair",
+        "swarm_size": 30,
+        "topology": "global",
+        "w": 0.7
+      },
+      "params_hash": "9dae88a62f7e"
+    }
+  }
+}

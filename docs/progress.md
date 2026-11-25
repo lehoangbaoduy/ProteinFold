@@ -83,7 +83,7 @@ Living document: always reflects current status. Spec: [PRD.md](PRD.md) · Brief
 | T3.2 | Penalty vs. repair mini-experiment (§7.4) → choose a strategy | `configs/penalty_repair.toml`, `results/penalty_repair.csv` | 720 runs | ☑ repair wins for GA and PSO on all 3 sequences (D24) |
 | T3.3 | Tuning with equal effort per algorithm (§7.3) | `configs/tuning.toml`, `results/tuning.csv` | 360 runs | ☑ winners in D27; applied in `configs/main_2d.toml`, `configs/ext_3d.toml` |
 | T3.4 | Main 2D study: 30 seeds × 3 algorithms × all 2D benchmarks | `configs/main_2d.toml`, `results/runs.csv` | row-count check | ☐ |
-| T3.5 | 3D extension: 30 seeds × 3 algorithms × 3D subset | `configs/ext_3d.toml` | row-count check | ☐ |
+| T3.5 | 3D extension: 30 seeds × 3 algorithms × 3D subset | `configs/ext_3d.toml` | row-count check | ☑ 450 runs = 3 algorithms × 5 sequences × 30 seeds |
 | T3.6 | Web export: traces (median + best run, < 2 MB each), benchmarks JSON, `defaults.json` (FR-E6), summary JSON | `src/hpfold_tools/export_web.py`, `web/public/data/`, `make web-data` | `tests/test_export_web.py`: schemas, pre-flight + exact reproduction, thinning, stale cleanup, size cap, parallel = sequential | ☑ review (1 HIGH) fixed |
 
 ## Phase 4 — Analysis (PRD §10 row 4)
