@@ -18,6 +18,7 @@ import {
   sourceLabel,
   type Benchmark,
   type Defaults,
+  type Overrides,
 } from "./options";
 
 import benchmarksJson from "../../public/data/benchmarks.json";
@@ -201,5 +202,90 @@ describe("buildJobs", () => {
     expect(buildJobs({ ...state, sequence: "HPX" }, defaults, benchmarks).ok).toBe(false);
     expect(buildJobs({ ...state, dims: [] }, defaults, benchmarks).ok).toBe(false);
     expect(buildJobs({ ...state, algorithms: [] }, defaults, benchmarks).ok).toBe(false);
+  });
+});
+
+describe("review run 36: overrides mirror hpfold.webjob, so bad values fail before any job starts", () => {
+  const state = { sequence: S1_1, dims: [2] as (2 | 3)[], algorithms: ["GA", "ACO", "PSO"] as ("GA" | "ACO" | "PSO")[], effort: "Standard" as const, seed: 1 };
+  const err = (overrides: Overrides) => {
+    const { defaults, benchmarks } = load();
+    const r = buildJobs(state, defaults, benchmarks, overrides);
+    return r.ok ? "ok" : r.error;
+  };
+
+  it.each([
+    ["null for a non-optional number", { GA: { pc: null } }, /wrong type/],
+    ["fraction for an integer", { GA: { pop_size: 2.5 } }, /wrong type/],
+    ["population above 1000", { GA: { pop_size: 5000 } }, /too large/],
+    ["swarm above 1000", { PSO: { swarm_size: 1001 } }, /too large/],
+    ["ants above 1000", { ACO: { n_ants: 1001 } }, /too large/],
+    ["backtracks above 1000", { ACO: { backtrack_limit: 1001 } }, /too large/],
+    ["number above 1e6", { ACO: { beta: 2e6 } }, /too large/],
+    ["unknown crossover", { GA: { crossover: "banana" } }, /crossover/],
+    ["unknown topology", { PSO: { topology: "" } }, /topology/],
+    ["unknown deposit", { ACO: { deposit: "x" } }, /deposit/],
+    ["unknown strategy", { PSO: { strategy: "foo" } }, /strategy/],
+    ["prototype key", JSON.parse('{"GA": {"__proto__": 1}}') as Overrides, /Unknown parameter/],
+  ])("rejects %s", (_label, overrides, message) => {
+    expect(err(overrides)).toMatch(message);
+  });
+
+  it.each([
+    ["pm as a number", { GA: { pm: 0.05 } }],
+    ["pm back to null (automatic)", { GA: { pm: null } }],
+    ["an int for a float parameter", { GA: { pc: 1 } }],
+    ["population at the cap", { GA: { pop_size: 1000 } }],
+    ["every allowed categorical value", { GA: { crossover: "uniform", strategy: "penalty" }, PSO: { topology: "ring" }, ACO: { deposit: "global_best" } }],
+  ])("accepts %s", (_label, overrides) => {
+    expect(err(overrides as Overrides)).toBe("ok");
+  });
+});
+
+describe("review run 36: defaults strictness and targets", () => {
+  const raw = () => readJson("defaults.json") as Record<string, unknown>;
+
+  it.each([
+    ["no Standard effort", (d: Record<string, unknown>) => ({ ...d, effort: [{ name: "Quick", c: 2, min: 5000 }, { name: "Thorough", c: 12, min: 5000 }] })],
+    ["duplicate effort names", (d: Record<string, unknown>) => ({ ...d, effort: [{ name: "Quick", c: 2, min: 5000 }, { name: "Quick", c: 3, min: 5000 }, { name: "Standard", c: 5, min: 5000 }, { name: "Thorough", c: 12, min: 5000 }] })],
+    ["max length above the browser cap", (d: Record<string, unknown>) => ({ ...d, limits: { min_length: 3, max_length: 150 } })],
+    ["a preset whose budget exceeds 200,000 at the max length", (d: Record<string, unknown>) => ({ ...d, effort: [{ name: "Quick", c: 2, min: 5000 }, { name: "Standard", c: 5, min: 5000 }, { name: "Thorough", c: 30, min: 5000 }] })],
+  ])("rejects defaults with %s", (_label, mutate) => {
+    expect(parseDefaults(mutate(raw()))).toBeNull();
+  });
+
+  it("rounds the budget up for a fractional constant", () => {
+    const { defaults, benchmarks } = load();
+    const custom = { ...defaults, effort: defaults.effort.map((e) => (e.name === "Quick" ? { ...e, c: 2.5, min: 0 } : e)) };
+    const r = buildJobs({ sequence: "HPHPHPH", dims: [2], algorithms: ["GA"], effort: "Quick", seed: 1 }, custom, benchmarks);
+    expect(r.ok && r.jobs[0]?.job.budget).toBe(Math.ceil(2.5 * 49)); // 123
+  });
+
+  it("orders jobs canonically whatever the input order", () => {
+    const { defaults, benchmarks } = load();
+    const r = buildJobs({ sequence: S1_1, dims: [3, 2], algorithms: ["PSO", "GA"], effort: "Quick", seed: 1 }, defaults, benchmarks);
+    expect(r.ok && r.jobs.map((j) => j.id)).toEqual(["GA-2d", "PSO-2d", "GA-3d", "PSO-3d"]);
+  });
+
+  it("targets a 3D benchmark on the 3D lattice, and nothing for an unknown sequence", () => {
+    const { defaults, benchmarks } = load();
+    const s21 = benchmarks.find((b) => b.id === "S2-1");
+    if (!s21) throw new Error("S2-1 missing");
+    const r = buildJobs({ sequence: s21.sequence, dims: [2, 3], algorithms: ["ACO"], effort: "Quick", seed: 1 }, defaults, benchmarks);
+    expect(r.ok && r.jobs.map((j) => j.job.target)).toEqual([null, s21.best_known_energy]);
+    const unknown = buildJobs({ sequence: "HPHPHPHH", dims: [2], algorithms: ["GA"], effort: "Quick", seed: 1 }, defaults, benchmarks);
+    expect(unknown.ok && unknown.jobs[0]?.job.target).toBeNull();
+  });
+
+  it("can run a benchmark for the full budget (no early stop)", () => {
+    const { defaults, benchmarks } = load();
+    const r = buildJobs({ sequence: S1_1, dims: [2], algorithms: ["GA"], effort: "Quick", seed: 1, stopAtBestKnown: false }, defaults, benchmarks);
+    expect(r.ok && r.jobs[0]?.job.target).toBeNull();
+  });
+
+  it("labels every real preset with an author-year source", () => {
+    const { benchmarks } = load();
+    for (const b of benchmarks) {
+      expect(presetLabel(b)).toMatch(/^S\d-\d+ · [23]D · n = \d+ · best known (0|−\d+) · \S.* (19|20)\d\d$/);
+    }
   });
 });

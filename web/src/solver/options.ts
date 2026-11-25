@@ -40,6 +40,8 @@ export interface SolverState {
   algorithms: Algorithm[];
   effort: EffortName;
   seed: number;
+  /** Stop a benchmark run once it reaches the best-known energy (default true). */
+  stopAtBestKnown?: boolean;
 }
 
 export type Overrides = Partial<Record<Algorithm, Params>>;
@@ -53,6 +55,25 @@ const MAX_SEED = 2 ** 31 - 1;
 const MINUS = "−";
 const PARAM_KEY = /^[a-z][a-z0-9_]{0,31}$/;
 const BENCHMARK_ID = /^[A-Za-z0-9-]{1,20}$/;
+
+// Mirrors of hpfold.webjob's checks, so an invalid Advanced-panel value fails here, before any
+// job starts, instead of in one worker while sibling jobs are already running.
+export const MAX_BUDGET = 200_000;
+export const MAX_BROWSER_LENGTH = 100;
+const MAX_POPULATION = 1000; // pop_size / swarm_size / n_ants
+const MAX_LOOP_PARAM = 1000; // ACO backtrack_limit / max_restarts
+const MAX_ABS_NUMBER = 1e6;
+const POPULATION_PARAMS = new Set(["pop_size", "swarm_size", "n_ants"]);
+const LOOP_PARAMS = new Set(["backtrack_limit", "max_restarts"]);
+// Integer fields of the Params dataclasses (JSON cannot tell 1.0 from 1).
+const INT_PARAMS = new Set(["pop_size", "tournament_k", "elite", "n_ants", "backtrack_limit", "max_restarts", "swarm_size"]);
+// Allowed values of the categorical fields (fitness.STRATEGIES, ga.CROSSOVERS, pso.TOPOLOGIES, aco.DEPOSITS).
+const CHOICES = new Map<string, readonly string[]>([
+  ["strategy", ["penalty", "repair"]],
+  ["crossover", ["one_point", "two_point", "uniform"]],
+  ["topology", ["global", "ring"]],
+  ["deposit", ["iteration_best", "global_best", "both"]],
+]);
 
 // Pyodide throughput at n = 100 (decision D21), in evaluations per second; cost per
 // evaluation grows linearly with n, so rate(n) = K / n.
@@ -92,10 +113,14 @@ export function parseDefaults(json: unknown): Defaults | null {
   const algorithms = json.algorithms;
   if (!ALGORITHM_ORDER.every((a) => isParams(paramsOf(algorithms, a)))) return null;
   const effort = json.effort;
-  if (!Array.isArray(effort) || effort.length === 0 || effort.length > 10 || !effort.every(isEffort)) return null;
+  // exactly the three presets, each once
+  if (!Array.isArray(effort) || effort.length !== EFFORT_NAMES.length || !effort.every(isEffort)) return null;
+  if (new Set(effort.map((e) => e.name)).size !== EFFORT_NAMES.length) return null;
   const limits = json.limits;
   if (!isObj(limits) || !isInt(limits.min_length) || !isInt(limits.max_length)) return null;
-  if (limits.min_length < 1 || limits.min_length > limits.max_length || limits.max_length > 1000) return null;
+  if (limits.min_length < 3 || limits.min_length > limits.max_length || limits.max_length > MAX_BROWSER_LENGTH) return null;
+  const maxLength = limits.max_length;
+  if (effort.some((e) => budgetFor(maxLength, e) > MAX_BUDGET)) return null; // the worker would refuse it
   return {
     source_config: json.source_config,
     algorithms: { GA: algorithms.GA as Params, ACO: algorithms.ACO as Params, PSO: algorithms.PSO as Params },
@@ -199,10 +224,21 @@ export function estimateSeconds(n: number, budget: number, algorithm: Algorithm)
   return (budget * n) / k;
 }
 
-function sameType(base: ParamValue | undefined, value: ParamValue): boolean {
-  if (base === undefined) return false;
-  if (base === null || typeof base === "number") return value === null || typeof value === "number"; // e.g. GA pm
-  return typeof value === typeof base;
+/** Error text for an override value, or null if hpfold.webjob would accept it. */
+function checkOverride(algorithm: Algorithm, key: string, base: ParamValue | undefined, value: unknown): string | null {
+  const wrongType = `Parameter ${key} for ${algorithm} has the wrong type.`;
+  if (base === undefined || !isParamValue(value)) return wrongType;
+  if (typeof base === "string") {
+    if (typeof value !== "string") return wrongType;
+    const allowed = CHOICES.get(key);
+    return allowed && !allowed.includes(value) ? `Parameter ${key} for ${algorithm} must be one of ${allowed.join(", ")}.` : null;
+  }
+  if (typeof base === "boolean") return typeof value === "boolean" ? null : wrongType;
+  // numbers; null only where the default is null (the GA mutation rate pm = automatic)
+  if (value === null) return base === null ? null : wrongType;
+  if (typeof value !== "number" || (INT_PARAMS.has(key) && !Number.isInteger(value))) return wrongType;
+  const limit = POPULATION_PARAMS.has(key) ? MAX_POPULATION : LOOP_PARAMS.has(key) ? MAX_LOOP_PARAM : MAX_ABS_NUMBER;
+  return Math.abs(value) > limit ? `Parameter ${key} for ${algorithm} is too large.` : null;
 }
 
 function mergeParams(algorithm: Algorithm, base: Params, override: Params | undefined): Params | string {
@@ -211,7 +247,8 @@ function mergeParams(algorithm: Algorithm, base: Params, override: Params | unde
     if (!PARAM_KEY.test(key) || !merged.has(key)) {
       return PARAM_KEY.test(key) ? `Unknown parameter ${key} for ${algorithm}.` : `Unknown parameter for ${algorithm}.`;
     }
-    if (!isParamValue(value) || !sameType(merged.get(key), value)) return `Parameter ${key} for ${algorithm} has the wrong type.`;
+    const problem = checkOverride(algorithm, key, merged.get(key), value);
+    if (problem !== null) return problem;
     merged.set(key, value);
   }
   return Object.fromEntries<ParamValue>(merged);
@@ -239,7 +276,8 @@ export function buildJobs(state: SolverState, defaults: Defaults, benchmarks: re
   const budget = budgetFor(sequence.length, preset);
   const jobs: QueuedJob[] = [];
   for (const dim of dims) {
-    const target = benchmarkFor(sequence, dim, benchmarks)?.best_known_energy ?? null;
+    const known = benchmarkFor(sequence, dim, benchmarks)?.best_known_energy ?? null;
+    const target = state.stopAtBestKnown === false ? null : known;
     for (const algorithm of algorithms) {
       jobs.push({
         id: `${algorithm}-${String(dim)}d`,
