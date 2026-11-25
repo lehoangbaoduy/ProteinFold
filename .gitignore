@@ -25,3 +25,4 @@ web/dist/
 web/public/pyodide/
 web/public/py/
 web/public/.runtime-staging/
+.playwright-mcp/
